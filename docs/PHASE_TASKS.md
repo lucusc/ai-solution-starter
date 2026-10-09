@@ -61,6 +61,12 @@ The summary below remains the high-level backlog.
 
 ## Phase 2 - Backend and Data Contracts
 
+The implementation-ready schema, API contract, failure-compensation behavior,
+test matrix, dependencies, and review gates are defined in
+[Phase 2 Implementation Plan](phases/PHASE_2_IMPLEMENTATION_PLAN.md).
+
+The summary below remains the high-level backlog.
+
 ### 2.1 Define the generic work-item schema
 
 - Define identifiers, source metadata, processing state, timestamps, AI output,

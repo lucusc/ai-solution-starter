@@ -88,6 +88,14 @@ Exit criteria:
 Implement the generic API, storage, database, identity, configuration,
 telemetry, and application error contracts.
 
+The approved contract uses Quart, authenticated PDF-only intake up to 20 MB,
+record-before-blob persistence, owner-only visibility, required idempotency
+keys, continuation-token pagination, and the explicit
+`submitted → queued → processing → completed/failed` lifecycle.
+
+See the
+[detailed Phase 2 implementation plan](phases/PHASE_2_IMPLEMENTATION_PLAN.md).
+
 Exit criteria:
 
 - Typed work-item API and persistence schema are implemented.
