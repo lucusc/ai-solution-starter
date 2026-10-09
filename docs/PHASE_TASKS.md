@@ -243,7 +243,8 @@ in [Phase 5 Implementation Plan](phases/PHASE_5_IMPLEMENTATION_PLAN.md).
 
 ## Phase 6 - Optional Azure AI Services
 
-**Status:** Phase 6 planning revised and awaiting approval.
+**Status:** Phase 6 implemented locally and awaiting review; no Azure
+deployment has been run.
 
 The conditional base-infrastructure contract, approved service scope,
 environment-variable selection behavior, module boundaries, independent review

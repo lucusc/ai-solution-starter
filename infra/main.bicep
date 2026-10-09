@@ -93,6 +93,35 @@ param openAiSkuName string = 'S0'
 param openAiApiKey string = ''
 param openAiApiOrganization string = ''
 
+@allowed([
+  'new'
+  'existing'
+  'none'
+])
+param useFoundry string = 'none'
+param foundryAccountName string = ''
+param foundryAccountResourceId string = ''
+param foundryProjectName string = 'starter'
+param foundryProjectResourceId string = ''
+param foundryResourceGroupName string = ''
+param foundryLocation string = location
+param foundrySkuName string = 'S0'
+param foundryConnectBaseOpenAi bool = false
+
+@allowed([
+  'new'
+  'existing'
+  'none'
+])
+param useDocumentIntelligence string = 'none'
+param documentIntelligenceName string = ''
+param documentIntelligenceResourceId string = ''
+param documentIntelligenceResourceGroupName string = ''
+param documentIntelligenceLocation string = location
+param documentIntelligenceSkuName string = 'S0'
+
+param configureExistingAiServices bool = false
+
 param chatGptModelName string = ''
 param chatGptDeploymentName string = ''
 param chatGptDeploymentVersion string = ''
@@ -281,6 +310,38 @@ resource storageResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' ex
 resource cosmosDbResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(cosmodDbResourceGroupName)) {
   name: !empty(cosmodDbResourceGroupName) ? cosmodDbResourceGroupName : mainResourceGroup.name
 }
+
+var foundryEnabled = useFoundry != 'none'
+var foundryExistingSourceId = !empty(foundryProjectResourceId)
+  ? foundryProjectResourceId
+  : foundryAccountResourceId
+var foundryExistingResourceParts = split(foundryExistingSourceId, '/')
+var foundrySubscriptionId = useFoundry == 'existing'
+  ? foundryExistingResourceParts[2]
+  : subscription().subscriptionId
+var selectedFoundryResourceGroupName = useFoundry == 'existing'
+  ? foundryExistingResourceParts[4]
+  : (!empty(foundryResourceGroupName) ? foundryResourceGroupName : mainResourceGroup.name)
+var selectedFoundryAccountName = useFoundry == 'existing'
+  ? foundryExistingResourceParts[8]
+  : (!empty(foundryAccountName) ? foundryAccountName : '${abbrs.cognitiveServicesAccounts}foundry-${resourceToken}')
+var selectedFoundryProjectName = useFoundry == 'existing' && !empty(foundryProjectResourceId)
+  ? foundryExistingResourceParts[10]
+  : foundryProjectName
+
+var documentIntelligenceEnabled = useDocumentIntelligence != 'none'
+var documentIntelligenceResourceParts = split(documentIntelligenceResourceId, '/')
+var documentIntelligenceSubscriptionId = useDocumentIntelligence == 'existing'
+  ? documentIntelligenceResourceParts[2]
+  : subscription().subscriptionId
+var selectedDocumentIntelligenceResourceGroupName = useDocumentIntelligence == 'existing'
+  ? documentIntelligenceResourceParts[4]
+  : (!empty(documentIntelligenceResourceGroupName) ? documentIntelligenceResourceGroupName : mainResourceGroup.name)
+var selectedDocumentIntelligenceName = useDocumentIntelligence == 'existing'
+  ? documentIntelligenceResourceParts[8]
+  : (!empty(documentIntelligenceName)
+      ? documentIntelligenceName
+      : '${abbrs.cognitiveServicesDocumentIntelligence}${resourceToken}')
 
 module storage 'modules/storage/storage-account.bicep' = {
   name: 'storage'
@@ -775,6 +836,60 @@ module openAiDeploymentsInExistingOpenAi 'modules/ai/openai-deployments.bicep' =
   }
 }
 
+module foundry 'modules/ai/foundry.bicep' = if (foundryEnabled) {
+  name: 'foundry'
+  scope: az.resourceGroup(foundrySubscriptionId, selectedFoundryResourceGroupName)
+  params: {
+    mode: useFoundry == 'new' ? 'new' : 'existing'
+    accountName: selectedFoundryAccountName
+    projectName: selectedFoundryProjectName
+    existingProjectName: useFoundry == 'existing' && !empty(foundryProjectResourceId)
+      ? selectedFoundryProjectName
+      : ''
+    location: foundryLocation
+    skuName: foundrySkuName
+    tags: tags
+    publicNetworkAccess: !empty(ipRules) ? 'Enabled' : publicNetworkAccess
+    networkBypass: bypass
+    ipRules: ipRules
+    disableLocalAuth: true
+    configureExistingResource: configureExistingAiServices
+    enableDiagnostics: useApplicationInsights && (useFoundry == 'new' || configureExistingAiServices)
+    logAnalyticsWorkspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
+    assignRoles: assignRoles
+    principalId: principalId
+    principalType: principalType
+    cognitiveServicesUserRoleId: roles.CognitiveServicesUser
+    connectAzureOpenAi: foundryConnectBaseOpenAi
+    azureOpenAiEndpoint: openAiHost == 'azure'
+      ? (deployAzureOpenAi ? openAi.outputs.endpoint : existingOpenAi.properties.endpoint)
+      : ''
+  }
+}
+
+module documentIntelligence 'modules/ai/document-intelligence.bicep' = if (documentIntelligenceEnabled) {
+  name: 'document-intelligence'
+  scope: az.resourceGroup(documentIntelligenceSubscriptionId, selectedDocumentIntelligenceResourceGroupName)
+  params: {
+    mode: useDocumentIntelligence == 'new' ? 'new' : 'existing'
+    accountName: selectedDocumentIntelligenceName
+    location: documentIntelligenceLocation
+    skuName: documentIntelligenceSkuName
+    tags: tags
+    publicNetworkAccess: !empty(ipRules) ? 'Enabled' : publicNetworkAccess
+    networkBypass: bypass
+    ipRules: ipRules
+    disableLocalAuth: true
+    configureExistingResource: configureExistingAiServices
+    enableDiagnostics: useApplicationInsights && (useDocumentIntelligence == 'new' || configureExistingAiServices)
+    logAnalyticsWorkspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
+    assignRoles: assignRoles
+    principalId: principalId
+    principalType: principalType
+    cognitiveServicesUserRoleId: roles.CognitiveServicesUser
+  }
+}
+
 module cosmosDb 'br/public:avm/res/document-db/database-account:0.6.1' = {
   name: 'cosmosdb'
   scope: cosmosDbResourceGroup
@@ -880,6 +995,26 @@ var openAiPrivateEndpointConnection = (isAzureOpenAiHost && deployAzureOpenAi)
     ]
   : []
 
+var foundryPrivateEndpointConnection = (foundryEnabled && usePrivateEndpoint && (useFoundry == 'new' || configureExistingAiServices))
+  ? [
+      {
+        groupId: 'account'
+        dnsZoneName: 'privatelink.services.ai.azure.com'
+        resourceIds: [foundry.outputs.accountId]
+      }
+    ]
+  : []
+
+var documentIntelligencePrivateEndpointConnection = (documentIntelligenceEnabled && usePrivateEndpoint && (useDocumentIntelligence == 'new' || configureExistingAiServices))
+  ? [
+      {
+        groupId: 'account'
+        dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+        resourceIds: [documentIntelligence.outputs.resourceId]
+      }
+    ]
+  : []
+
 var websiteResourceIds = union(
   [],
   empty(backendServicePlanAseId) ? [backend.outputs.id] : [],
@@ -937,7 +1072,12 @@ var otherPrivateEndpointConnections = (usePrivateEndpoint)
     )
   : []
 
-var privateEndpointConnections = concat(otherPrivateEndpointConnections, openAiPrivateEndpointConnection)
+var privateEndpointConnections = concat(
+  otherPrivateEndpointConnections,
+  openAiPrivateEndpointConnection,
+  foundryPrivateEndpointConnection,
+  documentIntelligencePrivateEndpointConnection
+)
 
 module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint) {
   name: 'privateEndpoints'
@@ -961,6 +1101,16 @@ module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint) {
 
 // USER ROLES
 var principalType = empty(runningOnGh) && empty(runningOnAdo) ? 'User' : 'ServicePrincipal'
+
+module foundryProjectOpenAiRole 'modules/security/role.bicep' = if (foundryEnabled && foundryConnectBaseOpenAi && openAiHost == 'azure' && assignRoles) {
+  scope: openAiResourceGroup
+  name: 'foundry-project-openai-role'
+  params: {
+    principalId: foundry.outputs.projectPrincipalId
+    roleDefinitionId: roles.CognitiveServicesOpenAIUser
+    principalType: 'ServicePrincipal'
+  }
+}
 
 var firstId = !deployAzureOpenAi && !empty(existingOpenAi.identity.?userAssignedIdentities)
   ? first(objectKeys(existingOpenAi.identity.userAssignedIdentities))
@@ -1467,6 +1617,38 @@ output AZURE_OPENAI_EMB_DEPLOYMENT string = isAzureOpenAiHost ? embedding.deploy
 output AZURE_OPENAI_GPT4V_DEPLOYMENT string = isAzureOpenAiHost && useGPT4V ? gpt4v.deploymentName : ''
 output AZURE_OPENAI_EVAL_DEPLOYMENT string = isAzureOpenAiHost && useEval ? eval.deploymentName : ''
 output AZURE_OPENAI_EVAL_MODEL string = isAzureOpenAiHost && useEval ? eval.modelName : ''
+
+output USE_FOUNDRY string = useFoundry
+output AZURE_FOUNDRY_ACCOUNT string = foundryEnabled ? foundry.outputs.accountName : ''
+output AZURE_FOUNDRY_ACCOUNT_ID string = foundryEnabled ? foundry.outputs.accountId : ''
+output AZURE_FOUNDRY_ACCOUNT_ENDPOINT string = foundryEnabled ? foundry.outputs.accountEndpoint : ''
+output AZURE_FOUNDRY_RESOURCE_GROUP string = foundryEnabled ? selectedFoundryResourceGroupName : ''
+output AZURE_FOUNDRY_LOCATION string = foundryEnabled ? foundry.outputs.location : ''
+output AZURE_FOUNDRY_ACCOUNT_PRINCIPAL_ID string = foundryEnabled ? foundry.outputs.accountPrincipalId : ''
+output AZURE_FOUNDRY_PROJECT string = foundryEnabled ? foundry.outputs.projectName : ''
+output AZURE_FOUNDRY_PROJECT_ID string = foundryEnabled ? foundry.outputs.projectId : ''
+output AZURE_FOUNDRY_PROJECT_ENDPOINT string = foundryEnabled ? foundry.outputs.projectEndpoint : ''
+output AZURE_FOUNDRY_PROJECT_PRINCIPAL_ID string = foundryEnabled ? foundry.outputs.projectPrincipalId : ''
+
+output USE_DOCUMENT_INTELLIGENCE string = useDocumentIntelligence
+output AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT string = documentIntelligenceEnabled
+  ? documentIntelligence.outputs.accountName
+  : ''
+output AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP string = documentIntelligenceEnabled
+  ? selectedDocumentIntelligenceResourceGroupName
+  : ''
+output AZURE_DOCUMENT_INTELLIGENCE_LOCATION string = documentIntelligenceEnabled
+  ? documentIntelligence.outputs.location
+  : ''
+output AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_ID string = documentIntelligenceEnabled
+  ? documentIntelligence.outputs.resourceId
+  : ''
+output AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT string = documentIntelligenceEnabled
+  ? documentIntelligence.outputs.endpoint
+  : ''
+output AZURE_DOCUMENT_INTELLIGENCE_PRINCIPAL_ID string = documentIntelligenceEnabled
+  ? documentIntelligence.outputs.principalId
+  : ''
 
 output AZURE_COSMOSDB_ACCOUNT string = cosmosDb.outputs.name
 output AZURE_COSMOSDB_RESOURCE_GROUP string = cosmosDbResourceGroup.name

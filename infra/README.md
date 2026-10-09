@@ -16,5 +16,7 @@ az bicep build --file infra/main.bicep --stdout > /dev/null
 The baseline must be preserved without refactoring or optimization. See
 [`CHANGE_CONTROL.md`](../docs/infrastructure/CHANGE_CONTROL.md).
 
-Future services such as Microsoft Foundry, Azure AI Search, and Azure AI
-Document Intelligence will be introduced only as additive extensions.
+Microsoft Foundry and Azure AI Document Intelligence are additive conditional
+modules under `modules/ai/`; both default to `none`. Azure AI Search remains
+deferred. See
+[`AI_SERVICES.md`](../docs/infrastructure/AI_SERVICES.md).

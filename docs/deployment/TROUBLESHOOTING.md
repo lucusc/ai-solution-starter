@@ -101,6 +101,26 @@ Check regional model availability, quota, model version, SKU, and approved
 existing-account configuration. Capacity and quota are external constraints,
 not reasons to commit credentials or silently select another model.
 
+## Optional AI service configuration is rejected
+
+Run:
+
+```bash
+python3 scripts/validate_ai_service_config.py --from-azd --check-azure
+```
+
+Use lowercase `new`, `existing`, or `none`. Existing mode requires a full ARM
+resource ID; new and none modes reject existing-resource IDs. Foundry requires
+an `AIServices` account and Document Intelligence requires a `FormRecognizer`
+account.
+
+## Foundry or Document Intelligence returns 403
+
+Confirm the caller uses `DefaultAzureCredential`, has the documented data-plane
+role, and can resolve/reach the service endpoint. For private deployments,
+verify the service-specific private DNS zone and VNet link. Do not enable keys
+or broad public access as a workaround.
+
 ## Repository validation fails
 
 Run:

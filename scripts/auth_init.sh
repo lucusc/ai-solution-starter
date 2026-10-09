@@ -1,5 +1,7 @@
 #!/bin/bash
 
+python3 ./scripts/validate_ai_service_config.py --from-azd --check-azure
+
 echo "Checking if authentication should be setup..."
 
 AZURE_BYPASS_AUTHENTICATION_SETUP=$(azd env get-value AZURE_BYPASS_AUTHENTICATION_SETUP)

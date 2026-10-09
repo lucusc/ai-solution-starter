@@ -16,6 +16,8 @@ Key commands:
 - `./scripts/probe_container.sh`: start and probe the combined production image
 - `./scripts/validate.sh`: run application, infrastructure, repository, or all
   local validation
+- `./scripts/validate_ai_service_config.py`: validate optional AI service modes,
+  resource IDs, and optionally existing Azure resource kinds
 - `./scripts/validate_repository.py`: validate documentation links and tracked
   artifact policy
 - `./scripts/verify_bicep_baseline.sh`: verify immutable Bicep checksums

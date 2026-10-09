@@ -11,6 +11,7 @@
 - [Deployment configuration](deployment/CONFIGURATION.md)
 - [Troubleshooting](deployment/TROUBLESHOOTING.md)
 - [Cost drivers](operations/COST_DRIVERS.md)
+- [Optional AI services](infrastructure/AI_SERVICES.md)
 - [Replacement guide](replacement/REPLACEMENT_GUIDE.md)
 
 ## Project governance and history

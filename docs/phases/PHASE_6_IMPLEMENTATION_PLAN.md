@@ -247,14 +247,13 @@ The exact names must remain environment-oriented and secret-free:
 
 | Environment value | Required when supplied | Purpose |
 | --- | --- | --- |
-| `FOUNDRY_ACCOUNT_RESOURCE_ID` | Existing-account mode | Full resource ID of a compatible `AIServices` account |
-| `FOUNDRY_PROJECT_NAME` | Deploy or existing-project mode | Project name to create or resolve |
-| `FOUNDRY_PROJECT_RESOURCE_ID` | Optional existing-project mode | Full resource ID of an existing project |
-| `FOUNDRY_LOCATION` | New-account mode | Deployment location |
-| `FOUNDRY_ACCOUNT_NAME` | New-account mode | Account name or deterministic naming seed |
-| `FOUNDRY_RESOURCE_GROUP` | New-account mode or short-name lookup | Resource group |
+| `EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID` | Existing-account mode | Full resource ID of a compatible `AIServices` account |
+| `AZURE_FOUNDRY_PROJECT` | Deploy or existing-project mode | Project name to create or resolve |
+| `EXISTING_FOUNDRY_PROJECT_RESOURCE_ID` | Optional existing-project mode | Full resource ID of an existing project |
+| `AZURE_FOUNDRY_LOCATION` | New-account mode | Deployment location |
+| `AZURE_FOUNDRY_ACCOUNT` | New-account mode | Account name or deterministic naming seed |
+| `AZURE_FOUNDRY_RESOURCE_GROUP` | New-account mode or short-name lookup | Resource group |
 | `FOUNDRY_CONNECT_BASE_OPENAI` | `false` | Request a project connection to the baseline Azure OpenAI resource |
-| `FOUNDRY_BASE_OPENAI_RESOURCE_ID` | Required when connection requested | Full resource ID; never inferred by editing or parsing baseline Bicep |
 
 An implementation may accept azd environment values exported by the base
 deployment, but it must treat them as inputs. It must not require a change to
@@ -264,11 +263,11 @@ the base outputs or parameter file.
 
 | Environment value | Required when supplied | Purpose |
 | --- | --- | --- |
-| `DOCUMENT_INTELLIGENCE_RESOURCE_ID` | Existing-resource mode | Full resource ID of a compatible `FormRecognizer` account |
-| `DOCUMENT_INTELLIGENCE_NAME` | New-resource mode | Account name or deterministic naming seed |
-| `DOCUMENT_INTELLIGENCE_RESOURCE_GROUP` | New-resource mode or short-name lookup | Resource group |
-| `DOCUMENT_INTELLIGENCE_LOCATION` | New-resource mode | Deployment location |
-| `DOCUMENT_INTELLIGENCE_SKU` | New-resource mode | Supported SKU selected explicitly |
+| `EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID` | Existing-resource mode | Full resource ID of a compatible `FormRecognizer` account |
+| `AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT` | New-resource mode | Account name or deterministic naming seed |
+| `AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP` | New-resource mode or short-name lookup | Resource group |
+| `AZURE_DOCUMENT_INTELLIGENCE_LOCATION` | New-resource mode | Deployment location |
+| `AZURE_DOCUMENT_INTELLIGENCE_SKU` | New-resource mode | Supported SKU selected explicitly |
 
 ### Resolution rules
 
@@ -515,7 +514,7 @@ Existing-account mode will:
 
 ### Existing-project mode
 
-When `FOUNDRY_PROJECT_RESOURCE_ID` is supplied:
+When `EXISTING_FOUNDRY_PROJECT_RESOURCE_ID` is supplied:
 
 - no account or project is created;
 - account/project compatibility is validated;
@@ -952,8 +951,8 @@ Documentation must keep these statuses explicit:
 
 - base infrastructure: implemented and protected;
 - Phase 4 workflow: planned, not implemented;
-- Foundry module: planned until its increment is implemented;
-- Document Intelligence module: planned until its increment is implemented;
+- Foundry module: implemented locally and pending review;
+- Document Intelligence module: implemented locally and pending review;
 - Azure AI Search module: planned for a later approval, not implemented.
 
 ## Security and Privacy Requirements

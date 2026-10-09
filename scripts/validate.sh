@@ -29,11 +29,13 @@ validate_application() {
     app/backend \
     scripts/generate_sample_pdf.py \
     scripts/smoke_backend_azure.py \
+    scripts/validate_ai_service_config.py \
     scripts/validate_repository.py
   "$python_bin" -m ruff format --check \
     app/backend \
     scripts/generate_sample_pdf.py \
     scripts/smoke_backend_azure.py \
+    scripts/validate_ai_service_config.py \
     scripts/validate_repository.py
   "$python_bin" -m mypy app/backend/backend
   docker build \
@@ -44,6 +46,9 @@ validate_application() {
 }
 
 validate_infrastructure() {
+  python3 "$repo_root/scripts/validate_ai_service_config.py"
+  az bicep build --file "$repo_root/infra/modules/ai/foundry.bicep" --stdout >/dev/null
+  az bicep build --file "$repo_root/infra/modules/ai/document-intelligence.bicep" --stdout >/dev/null
   az bicep build --file "$repo_root/infra/main.bicep" --stdout >/dev/null
   "$repo_root/scripts/verify_bicep_baseline.sh"
   bash -n "$repo_root"/scripts/*.sh

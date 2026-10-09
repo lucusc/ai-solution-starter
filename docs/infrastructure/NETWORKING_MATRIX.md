@@ -31,6 +31,13 @@ Private endpoints can be created for:
 - Azure Container Registry
 - backend Web App and Logic App sites
 - Azure OpenAI
+- Microsoft Foundry (`account`,
+  `privatelink.services.ai.azure.com`) when `USE_FOUNDRY=new`
+- Azure AI Document Intelligence (`account`,
+  `privatelink.cognitiveservices.azure.com`) when
+  `USE_DOCUMENT_INTELLIGENCE=new`
 - Azure Monitor private link scope for Application Insights and Log Analytics
 
 The deployment supports central private DNS zones and optional VNet linking.
+Existing Foundry and Document Intelligence accounts receive private endpoints
+only when `CONFIGURE_EXISTING_AI_SERVICES=true`.

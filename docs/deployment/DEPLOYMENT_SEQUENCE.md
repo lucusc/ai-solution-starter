@@ -5,11 +5,14 @@
 1. Authenticate with Azure CLI and Azure Developer CLI.
 2. Create or select an azd environment.
 3. Run the `preprovision` hook:
+   - validate optional AI service modes and existing resource kinds
    - determine whether authentication setup is enabled
    - create or update server and client Microsoft Entra applications
    - store generated application IDs and secrets in the azd environment
 4. Run `azd provision` using `infra/main.bicep` and
    `infra/main.parameters.json`.
+   The deployment conditionally creates or references Foundry and Document
+   Intelligence according to their `USE_*` modes.
 5. Run the `postprovision` hook:
    - update deployed and local redirect URIs using `BACKEND_URI`
 6. Optionally run `scripts/allow_my_ip_address.sh` for restricted local access.

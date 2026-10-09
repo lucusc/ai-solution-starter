@@ -28,7 +28,13 @@ jobs:
       - name: Install Azure CLI
         uses: azure/cli@v2
         with:
-          inlineScript: az bicep build --file infra/main.bicep --stdout > /dev/null
+          inlineScript: |
+            az bicep build --file infra/modules/ai/foundry.bicep --stdout > /dev/null
+            az bicep build --file infra/modules/ai/document-intelligence.bicep --stdout > /dev/null
+            az bicep build --file infra/main.bicep --stdout > /dev/null
+
+      - name: Validate optional AI service defaults
+        run: python3 scripts/validate_ai_service_config.py
 
       - name: Verify Bicep baseline
         run: ./scripts/verify_bicep_baseline.sh

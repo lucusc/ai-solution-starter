@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 from pathlib import Path
@@ -107,6 +108,31 @@ def _check_component_status(errors: list[str]) -> None:
         errors.append("README must state that the Logic App workflow is not implemented.")
 
 
+def _check_ai_service_contract(errors: list[str]) -> None:
+    parameters_path = REPO_ROOT / "infra" / "main.parameters.json"
+    parameters = json.loads(parameters_path.read_text(encoding="utf-8"))["parameters"]
+    expected = {
+        "useFoundry": "${USE_FOUNDRY=none}",
+        "useDocumentIntelligence": "${USE_DOCUMENT_INTELLIGENCE=none}",
+        "foundryAccountResourceId": "${EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID}",
+        "foundryProjectResourceId": "${EXISTING_FOUNDRY_PROJECT_RESOURCE_ID}",
+        "documentIntelligenceResourceId": "${EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID}",
+        "configureExistingAiServices": "${CONFIGURE_EXISTING_AI_SERVICES=false}",
+    }
+    for parameter, value in expected.items():
+        if parameters.get(parameter, {}).get("value") != value:
+            errors.append(f"Invalid optional AI service parameter mapping: {parameter}")
+
+    for relative in (
+        "infra/modules/ai/foundry.bicep",
+        "infra/modules/ai/document-intelligence.bicep",
+        "docs/infrastructure/AI_SERVICES.md",
+        "scripts/validate_ai_service_config.py",
+    ):
+        if not (REPO_ROOT / relative).is_file():
+            errors.append(f"Missing optional AI service contract file: {relative}")
+
+
 def main() -> int:
     errors: list[str] = []
     tracked = _tracked_files()
@@ -114,6 +140,7 @@ def main() -> int:
     _check_tracked_files(tracked, errors)
     _check_markdown_links(tracked, errors)
     _check_component_status(errors)
+    _check_ai_service_contract(errors)
 
     if errors:
         for error in errors:

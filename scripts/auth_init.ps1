@@ -1,3 +1,8 @@
+python ./scripts/validate_ai_service_config.py --from-azd --check-azure
+if ($LASTEXITCODE -ne 0) {
+  Exit $LASTEXITCODE
+}
+
 Write-Host "Checking if authentication should be setup..."
 
 $AZURE_BYPASS_AUTHENTICATION_SETUP = (azd env get-value AZURE_BYPASS_AUTHENTICATION_SETUP)

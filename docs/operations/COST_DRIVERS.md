@@ -12,10 +12,16 @@ monthly total.
 | Cosmos DB | serverless requests or provisioned RU/s, storage, regions | `AZURE_COSMOSDB_SKU`, throughput |
 | Storage | capacity, operations, redundancy, transfer | Storage SKU and workload volume |
 | Azure OpenAI | model deployment capacity and input/output tokens | model, SKU, capacity, document volume |
+| Microsoft Foundry | AI Services account usage, connected model usage, project workloads, and networking | `USE_FOUNDRY`, SKU, connections |
+| Document Intelligence | pages analyzed, selected model, tier, and region | `USE_DOCUMENT_INTELLIGENCE`, SKU, document volume |
 | Log Analytics | ingestion and retention | monitoring enablement and telemetry volume |
 | Application Insights | telemetry volume and retention | monitoring enablement |
 | Private networking | private endpoints and related network services | private-endpoint settings |
 | Environment count | duplicated baseline resources and runtime duration | dev/test/prod strategy |
+
+Services set to `none` add no service resource. `existing` avoids creating the
+parent account but may add explicitly selected child configuration and does
+not eliminate usage charges on that account.
 
 ## Estimate with Azure Pricing Calculator
 

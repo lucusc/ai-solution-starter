@@ -21,6 +21,8 @@ Before provisioning, decide:
 - App Service and Logic Apps Standard SKUs;
 - Cosmos DB free, provisioned, or serverless mode;
 - Azure OpenAI account creation or approved existing account;
+- optional Foundry and Document Intelligence `new`, `existing`, or `none`
+  modes;
 - model names, versions, capacity, and regional availability;
 - monitoring enablement;
 - role-assignment behavior; and
@@ -59,6 +61,16 @@ The manual deployment workflow requires:
 Review `.github/workflows/azure-dev.yml` before configuring an environment.
 The workflow can provision infrastructure without deploying application
 packages.
+
+Before provisioning, validate optional AI service values:
+
+```bash
+python3 scripts/validate_ai_service_config.py --from-azd --check-azure
+```
+
+This rejects unsupported modes, conflicting new/existing inputs, malformed
+resource IDs, and incompatible existing resource kinds. See
+[optional AI services](../infrastructure/AI_SERVICES.md).
 
 ## Phase 4 boundary
 

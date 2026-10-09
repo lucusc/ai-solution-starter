@@ -21,6 +21,8 @@ subscription, environment name, and primary location. Resources receive the
 | Database | Azure Cosmos DB for NoSQL | Supports free, provisioned, and serverless modes; creates the starter database and work-item container |
 | Workflow hosting | Logic Apps Standard plan and workflow app | Uses system- and user-assigned identities, VNet integration, diagnostics, and managed-identity storage authentication |
 | AI | Azure OpenAI account or approved existing account | Supports chat, embedding, vision, and optional evaluation deployments |
+| Optional AI | Microsoft Foundry account and project | `new`, `existing`, or disabled; optional managed-identity connection to baseline Azure OpenAI |
+| Optional document analysis | Azure AI Document Intelligence account | `new`, `existing`, or disabled; intended for prebuilt Layout usage |
 | Monitoring | Log Analytics and Application Insights | Optional monitoring, diagnostics, linked storage, and portal dashboard |
 | Networking | VNet, integration subnets, private endpoints, and private DNS | Supports generated or existing VNets and generated or existing private DNS zones |
 | Authentication | Microsoft Entra application registrations | Optional server and SPA registrations configured through azd hooks |
@@ -80,6 +82,14 @@ The template emits:
 - Storage account, input container, instructions container, and resource group
 - Cosmos DB account, resource group, database, container, and API version
 - Azure OpenAI account, resource group, model names, and deployment names
+- Foundry mode, account/project IDs and names, resource group, location,
+  endpoints, and managed identity principal IDs
+- Document Intelligence mode, account ID and name, resource group, location,
+  endpoint, and managed identity principal ID
 
 These outputs form the stable deployment and application configuration
 contract for later phases.
+
+When an optional service mode is `none`, its identifiers, endpoints,
+locations, resource groups, and principal IDs are emitted as empty strings.
+No credentials or shared output JSON are emitted.

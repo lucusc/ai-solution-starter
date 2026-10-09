@@ -20,6 +20,7 @@ replaceable.
 | React frontend and static hosting | Implemented locally; pending review/push |
 | Logic App and Azure OpenAI processing workflow | Planned in Phase 4; not implemented |
 | Starter-readiness documentation and validation | Implemented locally; pending review |
+| Optional Foundry and Document Intelligence infrastructure | Implemented locally; defaults to `none`; pending review |
 
 The repository does not yet claim a completed deployed AI vertical slice. See
 the [phased plan](docs/PLAN.md) and
@@ -35,6 +36,8 @@ flowchart LR
     API --> Cosmos[Azure Cosmos DB]
     Blob -. planned trigger .-> Logic[Logic Apps Standard]
     Logic -. planned managed identity call .-> OpenAI[Azure OpenAI]
+    Logic -. optional future use .-> Foundry[Microsoft Foundry project]
+    Logic -. optional future use .-> DocIntel[Document Intelligence]
     Logic -. planned status and result .-> Cosmos
     Cosmos --> API
     API --> Web
@@ -127,6 +130,7 @@ commands and expected prerequisites.
 - [Deployment configuration](docs/deployment/CONFIGURATION.md)
 - [Troubleshooting](docs/deployment/TROUBLESHOOTING.md)
 - [Azure cost drivers](docs/operations/COST_DRIVERS.md)
+- [Optional AI services](docs/infrastructure/AI_SERVICES.md)
 
 Azure-mutating commands require a separately approved environment and are
 clearly marked in the deployment documentation.

@@ -39,11 +39,13 @@ jobs:
             app/backend \
             scripts/generate_sample_pdf.py \
             scripts/smoke_backend_azure.py \
+            scripts/validate_ai_service_config.py \
             scripts/validate_repository.py
           python -m ruff format --check \
             app/backend \
             scripts/generate_sample_pdf.py \
             scripts/smoke_backend_azure.py \
+            scripts/validate_ai_service_config.py \
             scripts/validate_repository.py
 
       - name: Run type checks
@@ -129,7 +131,9 @@ jobs:
           python-version: "3.12"
 
       - name: Validate documentation and tracked artifacts
-        run: python scripts/validate_repository.py
+        run: |
+          python scripts/validate_ai_service_config.py
+          python scripts/validate_repository.py
 
       - name: Generate deterministic sample
         run: |

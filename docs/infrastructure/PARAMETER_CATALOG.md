@@ -59,6 +59,32 @@ environment or GitHub environment variables.
 | `AZURE_USE_GPT4V`, `AZURE_USE_EVAL` | Enable optional deployments |
 | `OPENAI_API_KEY`, `OPENAI_API_ORGANIZATION` | Non-Azure OpenAI configuration |
 
+## Optional AI services
+
+Both services default to `none`. Values are case-sensitive.
+
+| Environment value | Purpose | Default |
+| --- | --- | --- |
+| `USE_FOUNDRY` | `new`, `existing`, or `none` Foundry selection | `none` |
+| `AZURE_FOUNDRY_ACCOUNT` | New Foundry account name; generated when empty | Empty |
+| `AZURE_FOUNDRY_PROJECT` | Project to create or resolve | `starter` |
+| `AZURE_FOUNDRY_RESOURCE_GROUP` | New or existing account resource group | Primary resource group |
+| `AZURE_FOUNDRY_LOCATION` | New account/project location | Primary location |
+| `AZURE_FOUNDRY_SKU` | New Foundry account SKU | `S0` |
+| `EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID` | Full existing `AIServices` account ID | Empty |
+| `EXISTING_FOUNDRY_PROJECT_RESOURCE_ID` | Optional full existing project ID | Empty |
+| `FOUNDRY_CONNECT_BASE_OPENAI` | Add an AAD project connection to baseline Azure OpenAI | `false` |
+| `USE_DOCUMENT_INTELLIGENCE` | `new`, `existing`, or `none` selection | `none` |
+| `AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT` | New account name; generated when empty | Empty |
+| `AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP` | New or existing account resource group | Primary resource group |
+| `AZURE_DOCUMENT_INTELLIGENCE_LOCATION` | New account location | Primary location |
+| `AZURE_DOCUMENT_INTELLIGENCE_SKU` | New account SKU | `S0` |
+| `EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID` | Full existing `FormRecognizer` account ID | Empty |
+| `CONFIGURE_EXISTING_AI_SERVICES` | Permit module-owned RBAC, diagnostics, and private endpoints on selected existing accounts | `false` |
+
+See [optional AI services](AI_SERVICES.md) for mode validation, existing
+resource behavior, and usage examples.
+
 ## Authentication
 
 | Environment value | Purpose |

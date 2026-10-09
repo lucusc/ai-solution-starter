@@ -165,8 +165,9 @@ Do not copy prompts or criteria from a private solution.
 
 ## Adding Azure services
 
-If the new solution needs Foundry projects, AI Search, Document Intelligence,
-or another Azure service, use the conditional Phase 6 module strategy:
+Foundry and Document Intelligence are implemented conditional base modules.
+Select them with the documented `USE_*` modes. Azure AI Search and other future
+services must use the same reviewed module strategy:
 
 1. add a focused module under `infra/modules/ai/`;
 2. add only approved conditional parameters, module calls, and outputs to the

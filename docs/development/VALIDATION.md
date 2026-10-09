@@ -44,11 +44,13 @@ cd ../..
   app/backend \
   scripts/generate_sample_pdf.py \
   scripts/smoke_backend_azure.py \
+  scripts/validate_ai_service_config.py \
   scripts/validate_repository.py
 .venv/bin/python -m ruff format --check \
   app/backend \
   scripts/generate_sample_pdf.py \
   scripts/smoke_backend_azure.py \
+  scripts/validate_ai_service_config.py \
   scripts/validate_repository.py
 .venv/bin/python -m mypy app/backend/backend
 ```
@@ -68,6 +70,9 @@ docker build \
 ### Infrastructure
 
 ```bash
+python3 scripts/validate_ai_service_config.py
+az bicep build --file infra/modules/ai/foundry.bicep --stdout > /dev/null
+az bicep build --file infra/modules/ai/document-intelligence.bicep --stdout > /dev/null
 az bicep build --file infra/main.bicep --stdout > /dev/null
 ./scripts/verify_bicep_baseline.sh
 bash -n scripts/*.sh
@@ -76,6 +81,7 @@ bash -n scripts/*.sh
 ### Repository
 
 ```bash
+.venv/bin/python scripts/validate_ai_service_config.py
 .venv/bin/python scripts/validate_repository.py
 git diff --check
 ```
