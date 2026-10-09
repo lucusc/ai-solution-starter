@@ -149,11 +149,18 @@ replacement-boundary, and review contracts are defined in
 
 ## Phase 4 - Logic App and Azure AI Integration
 
+**Status:** Detailed implementation planning complete and awaiting approval.
+
+The implementation-ready trigger, concurrency, managed-identity, structured
+output, failure, observability, testing, and deployment-validation contracts
+are defined in
+[Phase 4 Implementation Plan](phases/PHASE_4_IMPLEMENTATION_PLAN.md).
+
 ### 4.1 Define the workflow contract
 
-- Define the trigger payload, correlation identifiers, status updates,
-  idempotency keys, retries, and terminal failures.
-- Define the structured AI output schema.
+- Define the Blob trigger payload, work-item correlation, queue-readiness
+  handling, ETag-protected state updates, retries, and terminal failures.
+- Define the `summary`, `category`, and `key_points` structured AI output.
 
 ### 4.2 Implement the generic workflow
 
@@ -171,16 +178,19 @@ replacement-boundary, and review contracts are defined in
 
 ### 4.4 Validate the deployed vertical slice
 
-- Deploy to a clean environment.
-- Submit synthetic text and a synthetic document.
+- Validate the package locally before any Azure deployment.
+- After explicit approval, deploy to a clean or approved disposable
+  environment.
+- Submit a synthetic PDF through the existing application.
 - Verify storage, workflow execution, AI result, database persistence, and UI
   display.
-- Exercise one controlled failure and retry case.
+- Exercise duplicate-delivery and controlled failure cases.
 - Re-run leakage and infrastructure-integrity checks.
 
 ### Phase 4 review gate
 
-- Demonstrate the deployed end-to-end flow.
+- Demonstrate local/package validation and, when separately approved, the
+  deployed end-to-end flow.
 - Review reliability, error behavior, and operational visibility.
 - Approve starter-hardening scope.
 
