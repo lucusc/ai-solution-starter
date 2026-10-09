@@ -1,0 +1,89 @@
+name: "Deploy to Azure Logic Apps"
+description: "Deploy to Azure Logic Apps"
+inputs:
+  resource-group:
+    description: "The name of the resource group to deploy to"
+    required: true
+  logicapp-name:
+    description: "The name of the Logic App to deploy to"
+    required: true
+  package:
+    description: "The path to the package to deploy"
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Get Runner IP
+      id: get-ip
+      uses: ./.github/actions/my-ip-address
+
+    - name: Allow Runner IP Temporarily
+      uses: azure/cli@v2.1.0
+      env:
+        LOGIC_APP_NAME: ${{ inputs.logicapp-name }}
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        IP_ADDRESS: ${{ steps.get-ip.outputs.ip_address }}
+      with:
+        azcliversion: latest
+        inlineScript: |
+          duration=1
+
+          az functionapp config access-restriction add -g "$RESOURCE_GROUP" -n "$LOGIC_APP_NAME" --rule-name build_server --action Allow --ip-address "$IP_ADDRESS/32" --priority 250 --scm-site true >/dev/null
+          az resource update -g "$RESOURCE_GROUP" -n "$LOGIC_APP_NAME" --resource-type "Microsoft.Web/sites" --set properties.publicNetworkAccess=Enabled >/dev/null
+
+          echo "Sleeping for $duration minutes..."
+          sleep "$duration"m
+
+    - name: Package Code
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+      run: |
+        pushd "$PACKAGE" || exit
+
+        mv -f parameters.json parameters.json.bak
+        mv -f azure.parameters.json parameters.json
+
+        zip -r ${{ runner.temp }}/zip.zip . -x "*.git*" "*.DS_Store" "node_modules/*" "dist/*" "**.bak"
+
+        # Restore the original parameters file
+        mv -f parameters.json azure.parameters.json
+        mv -f parameters.json.bak parameters.json
+
+        popd || exit
+
+    - name: Deploy to Azure Logic App
+      uses: azure/cli@v2.1.0
+      env:
+        LOGIC_APP_NAME: ${{ inputs.logicapp-name }}
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+      with:
+        azcliversion: latest
+        inlineScript: |
+          echo "Deploying Logic App workflow to $LOGIC_APP_NAME in resource group $RESOURCE_GROUP..."
+
+          az logicapp deployment source config-zip --name "$LOGIC_APP_NAME" \
+                                                  --resource-group "$RESOURCE_GROUP" \
+                                                  --src "${{ runner.temp }}/zip.zip"
+
+          deploy_status=$?
+
+          if [ $deploy_status -eq 0 ]; then
+            echo "Logic App workflow deployed successfully."
+          else
+            echo "Failed to deploy Logic App workflow."
+            exit 1
+          fi
+
+    - name: Remove Runner IP
+      if: always()
+      uses: azure/cli@v2.1.0
+      env:
+        LOGIC_APP_NAME: ${{ inputs.logicapp-name }}
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        IP_ADDRESS: ${{ steps.get-ip.outputs.ip_address }}
+      with:
+        azcliversion: latest
+        inlineScript: |
+          az functionapp config access-restriction remove -g "$RESOURCE_GROUP" -n "$LOGIC_APP_NAME" --ip-address "$IP_ADDRESS/32" --rule-name build_server --scm-site true >/dev/null
+          az resource update -g "$RESOURCE_GROUP" -n "$LOGIC_APP_NAME" --resource-type "Microsoft.Web/sites" --set properties.publicNetworkAccess=Disabled >/dev/null

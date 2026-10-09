@@ -1,0 +1,61 @@
+name: "Upload a file to Azure Storage"
+description: "Upload a file to Azure Storage"
+inputs:
+  resource-group:
+    description: "The name of the resource group containing the storage account"
+    required: true
+  storage-account:
+    description: "The name of the storage account to upload to"
+    required: true
+  container-name:
+    description: "The name of the container in the storage account"
+    required: true
+  file-path:
+    description: "The path to the file to upload"
+    required: true
+  blob-name:
+    description: "The name of the blob in the container"
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Get Runner IP
+      id: get-ip
+      uses: ./.github/actions/my-ip-address
+
+    - name: Enable Access to Storage Account
+      uses: Azure/cli@v2.1.0
+      with:
+        inlineScript: |
+          duration=1
+
+          echo "Enabling access to storage account '${{ inputs.storage-account }}' for IP address ${{steps.get-ip.outputs.ip_address}}..."
+          az storage account network-rule add --resource-group "${{ inputs.resource-group }}" --account-name "${{ inputs.storage-account }}" --ip-address "${{ steps.get-ip.outputs.ip_address }}" --only-show-errors >/dev/null
+          az storage account update --resource-group "${{ inputs.resource-group }}" --name "${{ inputs.storage-account }}" --public-network-access Enabled --default-action Deny --yes --only-show-errors >/dev/null
+
+          echo "Waiting for $duration minute(s) so that the changes take effect..."
+          sleep "$duration"m
+
+    - name: Upload File to Storage
+      uses: Azure/cli@v2.1.0
+      with:
+        inlineScript: |
+          echo "Uploading '${{ inputs.file-path }}' to Azure Blob Storage..."
+          az storage blob upload \
+            --account-name ${{ inputs.storage-account }} \
+            --container-name ${{ inputs.container-name }} \
+            --file ${{ inputs.file-path }} \
+            --name ${{ inputs.blob-name }} \
+            --overwrite \
+            --auth-mode login \
+            --no-progress \
+            --only-show-errors > /dev/null
+
+    - name: Disable Access to Storage Account
+      uses: Azure/cli@v2.1.0
+      if: always()
+      with:
+        inlineScript: |
+          echo "Disabling access to storage account '${{ inputs.storage-account }}' for IP address ${{steps.get-ip.outputs.ip_address}}..."
+          az storage account network-rule remove --resource-group "${{ inputs.resource-group }}" --account-name "${{ inputs.storage-account }}" --ip-address "${{ steps.get-ip.outputs.ip_address }}" --only-show-errors >/dev/null
+          az storage account update --resource-group "${{ inputs.resource-group }}" --name "${{ inputs.storage-account }}" --public-network-access Disabled --default-action Deny --yes --only-show-errors >/dev/null

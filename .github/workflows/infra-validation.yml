@@ -1,0 +1,34 @@
+name: Infrastructure Validation
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - "azure.yaml"
+      - ".github/workflows/infra-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - "azure.yaml"
+      - ".github/workflows/infra-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Azure CLI
+        uses: azure/cli@v2
+        with:
+          inlineScript: az bicep build --file infra/main.bicep --stdout > /dev/null
+
+      - name: Verify Bicep baseline
+        run: ./scripts/verify_bicep_baseline.sh

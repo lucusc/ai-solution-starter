@@ -5,9 +5,8 @@ AI-enabled solutions on Azure. It will provide a replaceable hello-world
 application that demonstrates a web frontend, backend API, data persistence,
 workflow automation, observability, and Azure AI integration.
 
-This repository currently contains planning and directory structure only.
-Application and infrastructure implementation will be delivered in reviewed
-phases.
+The repository currently contains the reviewed infrastructure and deployment
+baseline. Application implementation will be delivered in later phases.
 
 ## Planned Solution Shape
 
@@ -27,15 +26,17 @@ phases.
 
 ## Current Status
 
-Phase 0 establishes the clean repository shell, implementation plan, review
-gates, and source-sanitization rules. No production application or
-infrastructure has been implemented.
+Phase 1 establishes the Azure infrastructure, Azure Developer CLI hooks,
+deployment scripts, and GitHub Actions. The backend, frontend, and Logic App
+business workflow remain placeholders for later phases.
 
 See:
 
 - [Implementation plan](docs/PLAN.md)
 - [Phase task backlog](docs/PHASE_TASKS.md)
 - [Source sanitization policy](docs/SOURCE_SANITIZATION.md)
+- [Infrastructure resource contract](docs/infrastructure/RESOURCE_CONTRACT.md)
+- [Deployment sequence](docs/deployment/DEPLOYMENT_SEQUENCE.md)
 
 ## Guiding Principles
 

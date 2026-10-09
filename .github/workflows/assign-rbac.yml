@@ -1,0 +1,101 @@
+name: Assign RBAC to Resource Group
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - dev
+      role-name:
+        description: "Role name to assign"
+        required: true
+        type: choice
+        options:
+          - "All"
+          - "AcrPull"
+          - "Cognitive Services OpenAI User"
+          - "Cognitive Services User"
+          - "DocumentDB Account Contributor"
+          - "Storage Account Contributor"
+          - "Storage Blob Data Contributor"
+          - "Storage Blob Data Owner"
+          - "Storage Blob Data Reader"
+          - "Storage File Data Privileged Contributor"
+          - "Storage Queue Data Contributor"
+          - "Storage Queue Data Message Processor"
+          - "Storage Queue Data Message Sender"
+          - "Storage Queue Data Reader"
+          - "Storage Table Data Contributor"
+
+      assignee-object-id:
+        description: "Assignee object ID"
+        required: true
+        type: string
+      assignee-principal-type:
+        description: "Assignee principal type"
+        required: true
+        type: choice
+        options:
+          - "User"
+          - "ServicePrincipal"
+      are-you-sure:
+        description: "Are you sure you want to assign the RBAC role?"
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  assign-rbac:
+    if: ${{ github.event.inputs.are-you-sure }}
+    runs-on: ubuntu-latest
+    name: Assign RBAC in ${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: azure/login@v2.3.0
+        name: Login to Azure
+        with:
+          client-id: ${{ vars.AZURE_SERVICE_PRINCIPAL_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: azure/cli@v2.1.0
+        name: Assign RBAC
+        with:
+          azcliversion: latest
+          inlineScript: >
+            if [ "${{ github.event.inputs.role-name }}" == "All" ]; then
+                roles=(
+                    "AcrPull"
+                    "Cognitive Services OpenAI User"
+                    "Cognitive Services User"
+                    "DocumentDB Account Contributor"
+                    "Storage Account Contributor"
+                    "Storage Blob Data Contributor"
+                    "Storage Blob Data Owner"
+                    "Storage Blob Data Reader"
+                    "Storage File Data Privileged Contributor"
+                    "Storage Queue Data Contributor"
+                    "Storage Queue Data Message Processor"
+                    "Storage Queue Data Message Sender"
+                    "Storage Queue Data Reader"
+                    "Storage Table Data Contributor"
+                )
+            else
+                roles=("${{ github.event.inputs.role-name }}")
+            fi
+
+            for role in "${roles[@]}"; do
+                echo "Assigning role: $role"
+                az role assignment create \
+                    --assignee-object-id "${{ github.event.inputs.assignee-object-id }}" \
+                    --role "$role" \
+                    --scope /subscriptions/${{ vars.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.AZURE_RESOURCE_GROUP }} \
+                    --assignee-principal-type "${{ github.event.inputs.assignee-principal-type }}" \
+                    --only-show-errors > /dev/null
+            done

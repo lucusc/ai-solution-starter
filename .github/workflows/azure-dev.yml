@@ -1,0 +1,237 @@
+name: Deploy to Azure
+
+# Run when commits are pushed to main
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - dev
+      deploy-application:
+        description: "Deploy application packages after provisioning"
+        required: true
+        type: boolean
+        default: false
+
+run-name: Build and Deploy App to ${{ github.event.inputs.environment }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Set up permissions for deploying with secretless Azure federated credentials
+# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AGENT_WORKING_DIR: "${{ github.workspace }}/app/agent/workflows/"
+  BACKEND_CONTAINER_IMAGE_NAME: "backend"
+  BACKEND_WORKING_DIR: "${{ github.workspace }}/app/backend/"
+  FRONTEND_WORKING_DIR: "${{ github.workspace }}/app/frontend/"
+
+jobs:
+  build:
+    environment: ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    env:
+      ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
+      ASSIGN_ROLES: ${{ vars.ASSIGN_ROLES }}
+      AZURE_ALLOWED_IPS: ${{ vars.AZURE_ALLOWED_IPS }}
+      AZURE_APP_SERVICE: ${{ vars.AZURE_APP_SERVICE }}
+      AZURE_APP_SERVICE_PLAN: ${{ vars.AZURE_APP_SERVICE_PLAN }}
+      AZURE_APP_SERVICE_PLAN_ASE_ID: ${{ vars.AZURE_APP_SERVICE_PLAN_ASE_ID }}
+      AZURE_APP_SERVICE_SKU: ${{ vars.AZURE_APP_SERVICE_SKU }}
+      AZURE_APP_SERVICE_SKU_TIER: ${{ vars.AZURE_APP_SERVICE_SKU_TIER }}
+      AZURE_APPLICATION_INSIGHTS: ${{ vars.AZURE_APPLICATION_INSIGHTS }}
+      AZURE_AUTH_TENANT_ID: ${{ vars.AZURE_AUTH_TENANT_ID }}
+      AZURE_CLIENT_APP_ID: ${{ vars.AZURE_CLIENT_APP_ID }}
+      AZURE_CLIENT_APP_SECRET: ${{ vars.AZURE_CLIENT_APP_SECRET }}
+      AZURE_CONTAINER_REGISTRY: ${{ vars.AZURE_CONTAINER_REGISTRY }}
+      AZURE_COSMOSDB_ACCOUNT: ${{ vars.AZURE_COSMOSDB_ACCOUNT }}
+      AZURE_COSMOSDB_CONTAINER: ${{ vars.AZURE_COSMOSDB_CONTAINER }}
+      AZURE_COSMOSDB_DATABASE: ${{ vars.AZURE_COSMOSDB_DATABASE }}
+      AZURE_COSMOSDB_API_VERSION: ${{ vars.AZURE_COSMOSDB_API_VERSION }}
+      AZURE_COSMOSDB_LOCATION: ${{ vars.AZURE_COSMOSDB_LOCATION }}
+      AZURE_COSMOSDB_RESOURCE_GROUP: ${{ vars.AZURE_COSMOSDB_RESOURCE_GROUP }}
+      AZURE_COSMOSDB_SKU: ${{ vars.AZURE_COSMOSDB_SKU }}
+      AZURE_COSMOSDB_THROUGHPUT: ${{ vars.AZURE_COSMOSDB_THROUGHPUT }}
+      AZURE_DISABLE_APP_SERVICES_AUTHENTICATION: ${{ vars.AZURE_DISABLE_APP_SERVICES_AUTHENTICATION }}
+      AZURE_ENABLE_UNAUTHENTICATED_ACCESS: ${{ vars.AZURE_ENABLE_UNAUTHENTICATED_ACCESS }}
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+      AZURE_LOG_ANALYTICS: ${{ vars.AZURE_LOG_ANALYTICS }}
+      AZURE_LOGIC_APP_SERVICE: ${{ vars.AZURE_LOGIC_APP_SERVICE }}
+      AZURE_LOGIC_APP_SERVICE_ASE_ID: ${{ vars.AZURE_LOGIC_APP_SERVICE_ASE_ID }}
+      AZURE_LOGIC_APP_SERVICE_PLAN: ${{ vars.AZURE_LOGIC_APP_SERVICE_PLAN }}
+      AZURE_LOGIC_APP_SERVICE_SKU: ${{ vars.AZURE_LOGIC_APP_SERVICE_SKU }}
+      AZURE_LOGIC_APP_SERVICE_SKU_TIER: ${{ vars.AZURE_LOGIC_APP_SERVICE_SKU_TIER }}
+      AZURE_NETWORK_BYPASS: ${{ vars.AZURE_NETWORK_BYPASS }}
+      AZURE_OPENAI_API_KEY: ${{ vars.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_API_VERSION: ${{ vars.AZURE_OPENAI_API_VERSION }}
+      AZURE_OPENAI_CHATGPT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHATGPT_DEPLOYMENT }}
+      AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY: ${{ vars.AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY }}
+      AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU: ${{ vars.AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU }}
+      AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION: ${{ vars.AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION }}
+      AZURE_OPENAI_CHATGPT_MODEL: ${{ vars.AZURE_OPENAI_CHATGPT_MODEL }}
+      AZURE_OPENAI_CUSTOM_URL: ${{ vars.AZURE_OPENAI_CUSTOM_URL }}
+      AZURE_OPENAI_DISABLE_KEYS: ${{ vars.AZURE_OPENAI_DISABLE_KEYS }}
+      AZURE_OPENAI_EMB_DEPLOYMENT: ${{ vars.AZURE_OPENAI_EMB_DEPLOYMENT }}
+      AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY: ${{ vars.AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY }}
+      AZURE_OPENAI_EMB_DEPLOYMENT_SKU: ${{ vars.AZURE_OPENAI_EMB_DEPLOYMENT_SKU }}
+      AZURE_OPENAI_EMB_DEPLOYMENT_VERSION: ${{ vars.AZURE_OPENAI_EMB_DEPLOYMENT_VERSION }}
+      AZURE_OPENAI_EMB_DIMENSIONS: ${{ vars.AZURE_OPENAI_EMB_DIMENSIONS }}
+      AZURE_OPENAI_EMB_MODEL_NAME: ${{ vars.AZURE_OPENAI_EMB_MODEL_NAME }}
+      AZURE_OPENAI_EVAL_DEPLOYMENT: ${{ vars.AZURE_OPENAI_EVAL_DEPLOYMENT }}
+      AZURE_OPENAI_EVAL_DEPLOYMENT_CAPACITY: ${{ vars.AZURE_OPENAI_EVAL_DEPLOYMENT_CAPACITY }}
+      AZURE_OPENAI_EVAL_DEPLOYMENT_SKU: ${{ vars.AZURE_OPENAI_EVAL_DEPLOYMENT_SKU }}
+      AZURE_OPENAI_EVAL_MODEL_NAME: ${{ vars.AZURE_OPENAI_EVAL_MODEL_NAME }}
+      AZURE_OPENAI_EVAL_MODEL_VERSION: ${{ vars.AZURE_OPENAI_EVAL_MODEL_VERSION }}
+      AZURE_OPENAI_GPT4V_DEPLOYMENT: ${{ vars.AZURE_OPENAI_GPT4V_DEPLOYMENT }}
+      AZURE_OPENAI_GPT4V_DEPLOYMENT_CAPACITY: ${{ vars.AZURE_OPENAI_GPT4V_DEPLOYMENT_CAPACITY }}
+      AZURE_OPENAI_GPT4V_DEPLOYMENT_SKU: ${{ vars.AZURE_OPENAI_GPT4V_DEPLOYMENT_SKU }}
+      AZURE_OPENAI_GPT4V_MODEL_NAME: ${{ vars.AZURE_OPENAI_GPT4V_MODEL_NAME }}
+      AZURE_OPENAI_GPT4V_MODEL_VERSION: ${{ vars.AZURE_OPENAI_GPT4V_MODEL_VERSION }}
+      AZURE_OPENAI_LOCATION: ${{ vars.AZURE_OPENAI_LOCATION }}
+      AZURE_OPENAI_RESOURCE_GROUP: ${{ vars.AZURE_OPENAI_RESOURCE_GROUP }}
+      AZURE_OPENAI_SERVICE: ${{ vars.AZURE_OPENAI_SERVICE }}
+      AZURE_OPENAI_SERVICE_SKU: ${{ vars.AZURE_OPENAI_SERVICE_SKU }}
+      AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+      AZURE_PUBLIC_NETWORK_ACCESS: ${{ vars.AZURE_PUBLIC_NETWORK_ACCESS }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_SERVER_APP_ID: ${{ vars.AZURE_SERVER_APP_ID }}
+      AZURE_SERVER_APP_SECRET: ${{ vars.AZURE_SERVER_APP_SECRET }}
+      AZURE_STORAGE_ACCOUNT: ${{ vars.AZURE_STORAGE_ACCOUNT }}
+      AZURE_STORAGE_CONTAINER_NAME: ${{ vars.AZURE_STORAGE_CONTAINER_NAME }}
+      AZURE_STORAGE_INSTRUCTIONS_CONTAINER_NAME: ${{ vars.AZURE_STORAGE_INSTRUCTIONS_CONTAINER_NAME }}
+      AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE: ${{ vars.AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE }}
+      AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE: ${{ vars.AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE }}
+      AZURE_STORAGE_LOCATION: ${{ vars.AZURE_STORAGE_LOCATION }}
+      AZURE_STORAGE_RESOURCE_GROUP: ${{ vars.AZURE_STORAGE_RESOURCE_GROUP }}
+      AZURE_STORAGE_SKU: ${{ vars.AZURE_STORAGE_SKU }}
+      AZURE_STORAGE_INPUT_CONTAINER_NAME: ${{ vars.AZURE_STORAGE_INPUT_CONTAINER_NAME }}
+      AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE: ${{ vars.AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE }}
+      AZURE_STORAGE_TOKEN_CONTAINER_NAME: ${{ vars.AZURE_STORAGE_TOKEN_CONTAINER_NAME }}
+      AZURE_SUBNET_APP_INT_ADDRESS_PREFIX: ${{ vars.AZURE_SUBNET_APP_INT_ADDRESS_PREFIX }}
+      AZURE_SUBNET_APP_INT_NAME: ${{ vars.AZURE_SUBNET_APP_INT_NAME }}
+      AZURE_SUBNET_BACKEND_ADDRESS_PREFIX: ${{ vars.AZURE_SUBNET_BACKEND_ADDRESS_PREFIX }}
+      AZURE_SUBNET_BACKEND_NAME: ${{ vars.AZURE_SUBNET_BACKEND_NAME }}
+      AZURE_SUBNET_LOGIC_INT_ADDRESS_PREFIX: ${{ vars.AZURE_SUBNET_LOGIC_INT_ADDRESS_PREFIX }}
+      AZURE_SUBNET_LOGIC_INT_NAME: ${{ vars.AZURE_SUBNET_LOGIC_INT_NAME }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_USE_APPLICATION_INSIGHTS: ${{ vars.AZURE_USE_APPLICATION_INSIGHTS }}
+      AZURE_USE_EVAL: ${{ vars.AZURE_USE_EVAL }}
+      AZURE_USE_GPT4V: ${{ vars.AZURE_USE_GPT4V }}
+      AZURE_USE_PRIVATE_ENDPOINT: ${{ vars.AZURE_USE_PRIVATE_ENDPOINT }}
+      AZURE_VNET_ADDRESS_PREFIX: ${{ vars.AZURE_VNET_ADDRESS_PREFIX }}
+      CREATE_RESOURCE_GROUP: ${{ vars.CREATE_RESOURCE_GROUP }}
+      DEPLOY_AZURE_OPEN_MODELS: ${{ vars.DEPLOY_AZURE_OPEN_MODELS }}
+      DEPLOY_AZURE_OPENAI: ${{ vars.DEPLOY_AZURE_OPENAI }}
+      EXISTING_APP_INT_SUBNET_NAME: ${{ vars.EXISTING_APP_INT_SUBNET_NAME }}
+      EXISTING_BACKEND_SUBNET_NAME: ${{ vars.EXISTING_BACKEND_SUBNET_NAME }}
+      EXISTING_LOGIC_INT_SUBNET_NAME: ${{ vars.EXISTING_LOGIC_INT_SUBNET_NAME }}
+      EXISTING_VNET_NAME: ${{ vars.EXISTING_VNET_NAME }}
+      EXISTING_VNET_RESOURCE_GROUP_NAME: ${{ vars.EXISTING_VNET_RESOURCE_GROUP_NAME }}
+      EXISTING_VNET_SUBSCRIPTION_ID: ${{ vars.EXISTING_VNET_SUBSCRIPTION_ID }}
+      GITHUB_ACTIONS: ${{ vars.GITHUB_ACTIONS }}
+      LINK_PRIVATE_ENDPOINT_TO_PRIVATE_DNS_ZONE: ${{ vars.LINK_PRIVATE_ENDPOINT_TO_PRIVATE_DNS_ZONE }}
+      OPENAI_API_KEY: ${{ vars.OPENAI_API_KEY }}
+      OPENAI_API_ORGANIZATION: ${{ vars.OPENAI_API_ORGANIZATION }}
+      OPENAI_HOST: ${{ vars.OPENAI_HOST }}
+      PRIVATE_DNS_ZONES_RESOURCE_GROUP_NAME: ${{ vars.PRIVATE_DNS_ZONES_RESOURCE_GROUP_NAME }}
+      PRIVATE_DNS_ZONES_SUBSCRIPTION_ID: ${{ vars.PRIVATE_DNS_ZONES_SUBSCRIPTION_ID }}
+      SKIP_PRIVATE_DNS_ZONES: ${{ vars.SKIP_PRIVATE_DNS_ZONES }}
+      TF_BUILD: ${{ vars.TF_BUILD }}
+      USE_EXISTING_PRIVATE_DNS_ZONES: ${{ vars.USE_EXISTING_PRIVATE_DNS_ZONES }}
+      USE_EXISTING_VNET: ${{ vars.USE_EXISTING_VNET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2.2.0
+
+      - uses: azure/login@v2.3.0
+        name: Login to Azure
+        with:
+          client-id: ${{ vars.AZURE_SERVICE_PRINCIPAL_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set Azure CLI Authentication for Azd
+        run: azd config set auth.useAzCliAuth "true"
+
+      - name: Provision Infrastructure
+        id: provision
+        run: |
+          azd provision --no-prompt
+
+          resource_group=$(azd env get-value AZURE_RESOURCE_GROUP)
+          acr_name=$(azd env get-value AZURE_CONTAINER_REGISTRY_NAME)
+          backend_name=$(azd env get-value AZURE_BACKEND_SERVICE_NAME)
+          logic_app_name=$(azd env get-value AZURE_LOGICAPP_SERVICE_NAME)
+
+          echo "resource_group=$resource_group" >> "$GITHUB_OUTPUT"
+          echo "acr_name=$acr_name" >> "$GITHUB_OUTPUT"
+          echo "backend_name=$backend_name" >> "$GITHUB_OUTPUT"
+          echo "logic_app_name=$logic_app_name" >> "$GITHUB_OUTPUT"
+        env:
+          AZURE_CLIENT_APP_SECRET: ${{ secrets.AZURE_CLIENT_APP_SECRET }}
+          AZURE_SERVER_APP_SECRET: ${{ secrets.AZURE_SERVER_APP_SECRET }}
+
+      - name: Export Azd Values
+        id: export-azd-values
+        run: |
+          echo "Exporting Azd values as github environment variables"
+          ${{ github.workspace }}/scripts/export_azd_values.ps1 -FilePath $Env:GITHUB_OUTPUT -Append
+        shell: pwsh
+
+      - name: Update Dev Environment Variables
+        uses: ./.github/actions/create-environment-variables
+        with:
+          environment: ${{ github.event.inputs.environment }}
+          variables: ${{ steps.export-azd-values.outputs.variables }}
+          github-token: ${{ secrets.MANAGE_ENV_VARS_PAT }}
+
+      - name: Deploy Agent
+        if: ${{ github.event.inputs.deploy-application == 'true' }}
+        uses: ./.github/actions/logicapp-deploy
+        with:
+          logicapp-name: ${{ steps.provision.outputs.logic_app_name }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP }}
+          package: ${{ env.AGENT_WORKING_DIR }}
+
+      - name: Build Frontend
+        if: ${{ github.event.inputs.deploy-application == 'true' }}
+        run: |
+          pushd "${{ env.FRONTEND_WORKING_DIR }}" || exit
+          npm install
+          npm run build
+          popd || exit
+
+      - uses: ./.github/actions/acr-build-deploy
+        name: Build and Deploy Backend Image to ACR
+        if: ${{ github.event.inputs.deploy-application == 'true' }}
+        id: acr-build-deploy-backend
+        with:
+          container-registry-name: ${{ steps.provision.outputs.acr_name }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP }}
+          username: ${{ vars.AZURE_SERVICE_PRINCIPAL_CLIENT_ID }}
+          password: ${{ secrets.AZURE_SERVICE_PRINCIPAL_CLIENT_SECRET }}
+          image-name: ${{ env.BACKEND_CONTAINER_IMAGE_NAME }}
+          image-tag: ${{ github.sha }}
+          working-dir: ${{ env.BACKEND_WORKING_DIR }}
+
+      - name: Update Backend with New Image
+        if: ${{ github.event.inputs.deploy-application == 'true' }}
+        uses: ./.github/actions/webapps-deploy
+        with:
+          webapp-name: ${{ steps.provision.outputs.backend_name }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP }}
+          image: ${{ steps.acr-build-deploy-backend.outputs.image }}
