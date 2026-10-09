@@ -310,3 +310,58 @@ gates, and validation requirements are defined in
   and any approved live validation independently.
 - Keep Azure AI Search implementation deferred.
 - Do not push or release without separate approval.
+
+## Phase 7 - Infrastructure Parameter Organization
+
+**Status:** Implemented locally; awaiting review. No Azure deployment,
+commit, or push has been performed.
+
+The selected approach preserves one flat `infra/main.parameters.json` and
+groups its 124 current mappings into 7 functional sections. The catalog may
+use smaller subsections within those groups. Requirements, group order,
+catalog columns, validation, and scope boundaries are defined in
+[Phase 7 Implementation Plan](phases/PHASE_7_IMPLEMENTATION_PLAN.md).
+
+### 7.1 Approve the organizational contract
+
+- Approve group ownership and order, catalog columns, and validation scope.
+- Approve only a parameter-file presentation exception to infrastructure
+  preservation rules; do not authorize Bicep refactoring.
+- Capture the exact pre-change document for semantic comparison.
+
+### 7.2 Group the executable parameter file
+
+- Reorder existing entries by functional domain with blank-line separators.
+- Preserve the flat schema, keys, expressions, defaults, and entry shapes.
+- Add no comments, pseudo-parameters, files to merge, or generation step.
+
+### 7.3 Expand configuration guidance
+
+- Document every mapped parameter in matching catalog sections.
+- Distinguish mapping defaults from Bicep and hook fallback behavior.
+- Explain conditional requirements, types, allowed values, and secret handling.
+- Keep unmapped deployment inputs in a separate supplementary section.
+- Update the operator reading path, infrastructure README, and approved
+  change-control exception without duplicating the full catalog.
+
+### 7.4 Add organizational safeguards
+
+- Extend existing validation to reject duplicate keys, incomplete membership,
+  incorrect group order, and catalog drift.
+- Add focused positive and negative tests.
+- Wire checks into local infrastructure validation and infrastructure CI,
+  including relevant path triggers.
+
+### 7.5 Validate and prepare review evidence
+
+- Prove full parsed-document equality against the pre-change version.
+- Confirm complete catalog coverage and approved group separation.
+- Run focused checks, existing infrastructure validation, and documentation
+  link validation.
+- Record the implementation report only after implementation is complete.
+
+### Phase 7 review gate
+
+- Review the complete diff and exact equivalence evidence.
+- Confirm no Bicep, checksum, hook, or deployment behavior changes.
+- Do not deploy, commit, or push without separate approval.
