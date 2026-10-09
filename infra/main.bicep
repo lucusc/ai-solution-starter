@@ -846,7 +846,7 @@ module foundry 'modules/ai/foundry.bicep' = if (foundryEnabled) {
     existingProjectName: useFoundry == 'existing' && !empty(foundryProjectResourceId)
       ? selectedFoundryProjectName
       : ''
-    location: foundryLocation
+    location: !empty(foundryLocation) ? foundryLocation : location
     skuName: foundrySkuName
     tags: tags
     publicNetworkAccess: !empty(ipRules) ? 'Enabled' : publicNetworkAccess
@@ -873,7 +873,7 @@ module documentIntelligence 'modules/ai/document-intelligence.bicep' = if (docum
   params: {
     mode: useDocumentIntelligence == 'new' ? 'new' : 'existing'
     accountName: selectedDocumentIntelligenceName
-    location: documentIntelligenceLocation
+    location: !empty(documentIntelligenceLocation) ? documentIntelligenceLocation : location
     skuName: documentIntelligenceSkuName
     tags: tags
     publicNetworkAccess: !empty(ipRules) ? 'Enabled' : publicNetworkAccess
