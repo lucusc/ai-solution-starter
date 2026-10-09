@@ -2,41 +2,27 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "allowedIps": {
-      "value": "${AZURE_ALLOWED_IPS}"
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
     },
-    "allowedOrigin": {
-      "value": "${ALLOWED_ORIGIN}"
+    "location": {
+      "value": "${AZURE_LOCATION}"
     },
-    "applicationInsightsName": {
-      "value": "${AZURE_APPLICATION_INSIGHTS}"
+    "createResourceGroup": {
+      "value": "${CREATE_RESOURCE_GROUP=true}"
     },
-    "assignRoles": {
-      "value": "${ASSIGN_ROLES=true}"
+    "resourceGroupName": {
+      "value": "${AZURE_RESOURCE_GROUP}"
     },
-    "authTenantId": {
-      "value": "${AZURE_AUTH_TENANT_ID}"
-    },
-    "azureOpenAiApiKey": {
-      "value": "${AZURE_OPENAI_API_KEY}"
-    },
-    "azureOpenAiApiVersion": {
-      "value": "${AZURE_OPENAI_API_VERSION=2024-10-21}"
-    },
-    "azureOpenAiCustomUrl": {
-      "value": "${AZURE_OPENAI_CUSTOM_URL}"
-    },
-    "azureOpenAiDisableKeys": {
-      "value": "${AZURE_OPENAI_DISABLE_KEYS=true}"
-    },
+
     "backendServiceName": {
       "value": "${AZURE_APP_SERVICE}"
     },
-    "backendServicePlanAseId": {
-      "value": "${AZURE_APP_SERVICE_PLAN_ASE_ID}"
-    },
     "backendServicePlanName": {
       "value": "${AZURE_APP_SERVICE_PLAN}"
+    },
+    "backendServicePlanAseId": {
+      "value": "${AZURE_APP_SERVICE_PLAN_ASE_ID}"
     },
     "backendServiceSkuName": {
       "value": "${AZURE_APP_SERVICE_SKU=B1}"
@@ -44,194 +30,11 @@
     "backendServiceSkuTier": {
       "value": "${AZURE_APP_SERVICE_SKU_TIER=Basic}"
     },
-    "bypass": {
-      "value": "${AZURE_NETWORK_BYPASS=AzureServices}"
-    },
-    "chatGptDeploymentCapacity": {
-      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY}"
-    },
-    "chatGptDeploymentName": {
-      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT}"
-    },
-    "chatGptDeploymentSkuName": {
-      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU}"
-    },
-    "chatGptDeploymentVersion": {
-      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION}"
-    },
-    "chatGptModelName": {
-      "value": "${AZURE_OPENAI_CHATGPT_MODEL}"
-    },
-    "clientAppId": {
-      "value": "${AZURE_CLIENT_APP_ID}"
-    },
-    "clientAppSecret": {
-      "value": "${AZURE_CLIENT_APP_SECRET}"
-    },
     "containerRegistryName": {
       "value": "${AZURE_CONTAINER_REGISTRY}"
     },
-    "cosmodDbResourceGroupName": {
-      "value": "${AZURE_COSMOSDB_RESOURCE_GROUP}"
-    },
-    "cosmosDbAccountName": {
-      "value": "${AZURE_COSMOSDB_ACCOUNT}"
-    },
-    "cosmosDbWorkItemContainerName": {
-      "value": "${AZURE_COSMOSDB_CONTAINER=inputs}"
-    },
-    "cosmosDbWorkItemDatabaseName": {
-      "value": "${AZURE_COSMOSDB_DATABASE=starter}"
-    },
-    "cosmosDbWorkItemApiVersion": {
-      "value": "${AZURE_COSMOSDB_API_VERSION=2023-10-15}"
-    },
-    "cosmosDbLocation": {
-      "value": "${AZURE_COSMOSDB_LOCATION}"
-    },
-    "cosmosDbSkuName": {
-      "value": "${AZURE_COSMOSDB_SKU=serverless}"
-    },
-    "cosmosDbThroughput": {
-      "value": "${AZURE_COSMOSDB_THROUGHPUT=400}"
-    },
-    "configureExistingAiServices": {
-      "value": "${CONFIGURE_EXISTING_AI_SERVICES=false}"
-    },
-    "createResourceGroup": {
-      "value": "${CREATE_RESOURCE_GROUP=true}"
-    },
-    "deployAzureOpenAi": {
-      "value": "${DEPLOY_AZURE_OPENAI=true}"
-    },
-    "deployAzureOpenModels": {
-      "value": "${DEPLOY_AZURE_OPEN_MODELS=true}"
-    },
-    "disableAppServicesAuthentication": {
-      "value": "${AZURE_DISABLE_APP_SERVICES_AUTHENTICATION=false}"
-    },
-    "documentIntelligenceLocation": {
-      "value": "${AZURE_DOCUMENT_INTELLIGENCE_LOCATION}"
-    },
-    "documentIntelligenceName": {
-      "value": "${AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT}"
-    },
-    "documentIntelligenceResourceGroupName": {
-      "value": "${AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP}"
-    },
-    "documentIntelligenceResourceId": {
-      "value": "${EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID}"
-    },
-    "documentIntelligenceSkuName": {
-      "value": "${AZURE_DOCUMENT_INTELLIGENCE_SKU=S0}"
-    },
-    "embeddingDeploymentCapacity": {
-      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY}"
-    },
-    "embeddingDeploymentName": {
-      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT}"
-    },
-    "embeddingDeploymentSkuName": {
-      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_SKU}"
-    },
-    "embeddingDeploymentVersion": {
-      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_VERSION}"
-    },
-    "embeddingDimensions": {
-      "value": "${AZURE_OPENAI_EMB_DIMENSIONS}"
-    },
-    "embeddingModelName": {
-      "value": "${AZURE_OPENAI_EMB_MODEL_NAME}"
-    },
-    "enableUnauthenticatedAccess": {
-      "value": "${AZURE_ENABLE_UNAUTHENTICATED_ACCESS=false}"
-    },
-    "environmentName": {
-      "value": "${AZURE_ENV_NAME}"
-    },
-    "evalDeploymentCapacity": {
-      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT_CAPACITY}"
-    },
-    "evalDeploymentName": {
-      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT}"
-    },
-    "evalDeploymentSkuName": {
-      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT_SKU}"
-    },
-    "evalModelName": {
-      "value": "${AZURE_OPENAI_EVAL_MODEL_NAME}"
-    },
-    "evalModelVersion": {
-      "value": "${AZURE_OPENAI_EVAL_MODEL_VERSION}"
-    },
-    "existingAppIntSubnetName": {
-      "value": "${EXISTING_APP_INT_SUBNET_NAME}"
-    },
-    "existingBackendSubnetName": {
-      "value": "${EXISTING_BACKEND_SUBNET_NAME}"
-    },
-    "existingLogicIntSubnetName": {
-      "value": "${EXISTING_LOGIC_INT_SUBNET_NAME}"
-    },
-    "existingVnetName": {
-      "value": "${EXISTING_VNET_NAME}"
-    },
-    "existingVnetResourceGroupName": {
-      "value": "${EXISTING_VNET_RESOURCE_GROUP_NAME}"
-    },
-    "existingVnetSubscriptionId": {
-      "value": "${EXISTING_VNET_SUBSCRIPTION_ID}"
-    },
-    "foundryAccountName": {
-      "value": "${AZURE_FOUNDRY_ACCOUNT}"
-    },
-    "foundryAccountResourceId": {
-      "value": "${EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID}"
-    },
-    "foundryConnectBaseOpenAi": {
-      "value": "${FOUNDRY_CONNECT_BASE_OPENAI=false}"
-    },
-    "foundryLocation": {
-      "value": "${AZURE_FOUNDRY_LOCATION}"
-    },
-    "foundryProjectName": {
-      "value": "${AZURE_FOUNDRY_PROJECT=starter}"
-    },
-    "foundryProjectResourceId": {
-      "value": "${EXISTING_FOUNDRY_PROJECT_RESOURCE_ID}"
-    },
-    "foundryResourceGroupName": {
-      "value": "${AZURE_FOUNDRY_RESOURCE_GROUP}"
-    },
-    "foundrySkuName": {
-      "value": "${AZURE_FOUNDRY_SKU=S0}"
-    },
-    "gpt4vDeploymentCapacity": {
-      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT_CAPACITY}"
-    },
-    "gpt4vDeploymentName": {
-      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT}"
-    },
-    "gpt4vDeploymentSkuName": {
-      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT_SKU}"
-    },
-    "gpt4vModelName": {
-      "value": "${AZURE_OPENAI_GPT4V_MODEL_NAME}"
-    },
-    "gpt4vModelVersion": {
-      "value": "${AZURE_OPENAI_GPT4V_MODEL_VERSION}"
-    },
-    "linkPrivateEndpointToPrivateDnsZone": {
-      "value": "${LINK_PRIVATE_ENDPOINT_TO_PRIVATE_DNS_ZONE=true}"
-    },
-    "location": {
-      "value": "${AZURE_LOCATION}"
-    },
-    "logAnalyticsName": {
-      "value": "${AZURE_LOG_ANALYTICS}"
-    },
-    "logicAppServiceAseId": {
-      "value": "${AZURE_LOGIC_APP_SERVICE_ASE_ID}"
+    "allowedOrigin": {
+      "value": "${ALLOWED_ORIGIN}"
     },
     "logicAppServiceName": {
       "value": "${AZURE_LOGIC_APP_SERVICE}"
@@ -239,77 +42,30 @@
     "logicAppServicePlanName": {
       "value": "${AZURE_LOGIC_APP_SERVICE_PLAN}"
     },
+    "logicAppServiceAseId": {
+      "value": "${AZURE_LOGIC_APP_SERVICE_ASE_ID}"
+    },
     "logicAppServiceSkuName": {
       "value": "${AZURE_LOGIC_APP_SERVICE_SKU=WS1}"
     },
     "logicAppServiceSkuTier": {
       "value": "${AZURE_LOGIC_APP_SERVICE_SKU_TIER=WorkflowStandard}"
     },
-    "openAiApiKey": {
-      "value": "${OPENAI_API_KEY}"
-    },
-    "openAiApiOrganization": {
-      "value": "${OPENAI_API_ORGANIZATION}"
-    },
-    "openAiHost": {
-      "value": "${OPENAI_HOST=azure}"
-    },
-    "openAiLocation": {
-      "value": "${AZURE_OPENAI_LOCATION}"
-    },
-    "openAiResourceGroupName": {
-      "value": "${AZURE_OPENAI_RESOURCE_GROUP}"
-    },
-    "openAiServiceName": {
-      "value": "${AZURE_OPENAI_SERVICE}"
-    },
-    "openAiSkuName": {
-      "value": "${AZURE_OPENAI_SERVICE_SKU=S0}"
-    },
-    "principalId": {
-      "value": "${AZURE_PRINCIPAL_ID}"
-    },
-    "privateDnsZonesResourceGroupName": {
-      "value": "${PRIVATE_DNS_ZONES_RESOURCE_GROUP_NAME}"
-    },
-    "privateDnsZonesSubscriptionId": {
-      "value": "${PRIVATE_DNS_ZONES_SUBSCRIPTION_ID}"
-    },
-    "publicNetworkAccess": {
-      "value": "${AZURE_PUBLIC_NETWORK_ACCESS=Disabled}"
-    },
-    "resourceGroupName": {
-      "value": "${AZURE_RESOURCE_GROUP}"
-    },
-    "runningOnAdo": {
-      "value": "${TF_BUILD}"
-    },
-    "runningOnGh": {
-      "value": "${GITHUB_ACTIONS}"
-    },
-    "serverAppId": {
-      "value": "${AZURE_SERVER_APP_ID}"
-    },
-    "serverAppSecret": {
-      "value": "${AZURE_SERVER_APP_SECRET}"
-    },
-    "skipPrivateDnsZones": {
-      "value": "${SKIP_PRIVATE_DNS_ZONES=false}"
-    },
+
     "storageAccountName": {
       "value": "${AZURE_STORAGE_ACCOUNT}"
-    },
-    "storageContainerName": {
-      "value": "${AZURE_STORAGE_CONTAINER_NAME=content}"
-    },
-    "storageResourceGroupLocation": {
-      "value": "${AZURE_STORAGE_LOCATION}"
     },
     "storageResourceGroupName": {
       "value": "${AZURE_STORAGE_RESOURCE_GROUP}"
     },
+    "storageResourceGroupLocation": {
+      "value": "${AZURE_STORAGE_LOCATION}"
+    },
     "storageSkuName": {
       "value": "${AZURE_STORAGE_SKU=Standard_LRS}"
+    },
+    "storageContainerName": {
+      "value": "${AZURE_STORAGE_CONTAINER_NAME=content}"
     },
     "storageTokenContainerName": {
       "value": "${AZURE_STORAGE_TOKEN_CONTAINER_NAME=tokens}"
@@ -329,11 +85,251 @@
     "storageEvaluationInstructionsFile": {
       "value": "${AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE=evaluation.md}"
     },
-    "subnetAppIntAddressPrefix": {
-      "value": "${AZURE_SUBNET_APP_INT_ADDRESS_PREFIX=10.0.2.0/24}"
+    "cosmosDbAccountName": {
+      "value": "${AZURE_COSMOSDB_ACCOUNT}"
     },
-    "subnetAppIntName": {
-      "value": "${AZURE_SUBNET_APP_INT_NAME=app-int-subnet}"
+    "cosmodDbResourceGroupName": {
+      "value": "${AZURE_COSMOSDB_RESOURCE_GROUP}"
+    },
+    "cosmosDbLocation": {
+      "value": "${AZURE_COSMOSDB_LOCATION}"
+    },
+    "cosmosDbSkuName": {
+      "value": "${AZURE_COSMOSDB_SKU=serverless}"
+    },
+    "cosmosDbThroughput": {
+      "value": "${AZURE_COSMOSDB_THROUGHPUT=400}"
+    },
+    "cosmosDbWorkItemDatabaseName": {
+      "value": "${AZURE_COSMOSDB_DATABASE=starter}"
+    },
+    "cosmosDbWorkItemContainerName": {
+      "value": "${AZURE_COSMOSDB_CONTAINER=inputs}"
+    },
+    "cosmosDbWorkItemApiVersion": {
+      "value": "${AZURE_COSMOSDB_API_VERSION=2023-10-15}"
+    },
+
+    "openAiHost": {
+      "value": "${OPENAI_HOST=azure}"
+    },
+    "deployAzureOpenAi": {
+      "value": "${DEPLOY_AZURE_OPENAI=true}"
+    },
+    "deployAzureOpenModels": {
+      "value": "${DEPLOY_AZURE_OPEN_MODELS=true}"
+    },
+    "openAiServiceName": {
+      "value": "${AZURE_OPENAI_SERVICE}"
+    },
+    "openAiResourceGroupName": {
+      "value": "${AZURE_OPENAI_RESOURCE_GROUP}"
+    },
+    "openAiLocation": {
+      "value": "${AZURE_OPENAI_LOCATION}"
+    },
+    "openAiSkuName": {
+      "value": "${AZURE_OPENAI_SERVICE_SKU=S0}"
+    },
+    "azureOpenAiApiVersion": {
+      "value": "${AZURE_OPENAI_API_VERSION=2024-10-21}"
+    },
+    "azureOpenAiCustomUrl": {
+      "value": "${AZURE_OPENAI_CUSTOM_URL}"
+    },
+    "azureOpenAiDisableKeys": {
+      "value": "${AZURE_OPENAI_DISABLE_KEYS=true}"
+    },
+    "azureOpenAiApiKey": {
+      "value": "${AZURE_OPENAI_API_KEY}"
+    },
+    "openAiApiKey": {
+      "value": "${OPENAI_API_KEY}"
+    },
+    "openAiApiOrganization": {
+      "value": "${OPENAI_API_ORGANIZATION}"
+    },
+    "useGPT4V": {
+      "value": "${AZURE_USE_GPT4V=true}"
+    },
+    "useEval": {
+      "value": "${AZURE_USE_EVAL=false}"
+    },
+    "chatGptModelName": {
+      "value": "${AZURE_OPENAI_CHATGPT_MODEL}"
+    },
+    "chatGptDeploymentName": {
+      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT}"
+    },
+    "chatGptDeploymentVersion": {
+      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION}"
+    },
+    "chatGptDeploymentSkuName": {
+      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU}"
+    },
+    "chatGptDeploymentCapacity": {
+      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY}"
+    },
+    "embeddingModelName": {
+      "value": "${AZURE_OPENAI_EMB_MODEL_NAME}"
+    },
+    "embeddingDeploymentName": {
+      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT}"
+    },
+    "embeddingDeploymentVersion": {
+      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_VERSION}"
+    },
+    "embeddingDeploymentSkuName": {
+      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_SKU}"
+    },
+    "embeddingDeploymentCapacity": {
+      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY}"
+    },
+    "embeddingDimensions": {
+      "value": "${AZURE_OPENAI_EMB_DIMENSIONS}"
+    },
+    "gpt4vModelName": {
+      "value": "${AZURE_OPENAI_GPT4V_MODEL_NAME}"
+    },
+    "gpt4vDeploymentName": {
+      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT}"
+    },
+    "gpt4vModelVersion": {
+      "value": "${AZURE_OPENAI_GPT4V_MODEL_VERSION}"
+    },
+    "gpt4vDeploymentSkuName": {
+      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT_SKU}"
+    },
+    "gpt4vDeploymentCapacity": {
+      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT_CAPACITY}"
+    },
+    "evalModelName": {
+      "value": "${AZURE_OPENAI_EVAL_MODEL_NAME}"
+    },
+    "evalDeploymentName": {
+      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT}"
+    },
+    "evalModelVersion": {
+      "value": "${AZURE_OPENAI_EVAL_MODEL_VERSION}"
+    },
+    "evalDeploymentSkuName": {
+      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT_SKU}"
+    },
+    "evalDeploymentCapacity": {
+      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT_CAPACITY}"
+    },
+    "configureExistingAiServices": {
+      "value": "${CONFIGURE_EXISTING_AI_SERVICES=false}"
+    },
+    "useFoundry": {
+      "value": "${USE_FOUNDRY=none}"
+    },
+    "foundryAccountName": {
+      "value": "${AZURE_FOUNDRY_ACCOUNT}"
+    },
+    "foundryAccountResourceId": {
+      "value": "${EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID}"
+    },
+    "foundryProjectName": {
+      "value": "${AZURE_FOUNDRY_PROJECT=starter}"
+    },
+    "foundryProjectResourceId": {
+      "value": "${EXISTING_FOUNDRY_PROJECT_RESOURCE_ID}"
+    },
+    "foundryResourceGroupName": {
+      "value": "${AZURE_FOUNDRY_RESOURCE_GROUP}"
+    },
+    "foundryLocation": {
+      "value": "${AZURE_FOUNDRY_LOCATION}"
+    },
+    "foundrySkuName": {
+      "value": "${AZURE_FOUNDRY_SKU=S0}"
+    },
+    "foundryConnectBaseOpenAi": {
+      "value": "${FOUNDRY_CONNECT_BASE_OPENAI=false}"
+    },
+    "useDocumentIntelligence": {
+      "value": "${USE_DOCUMENT_INTELLIGENCE=none}"
+    },
+    "documentIntelligenceName": {
+      "value": "${AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT}"
+    },
+    "documentIntelligenceResourceId": {
+      "value": "${EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID}"
+    },
+    "documentIntelligenceResourceGroupName": {
+      "value": "${AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP}"
+    },
+    "documentIntelligenceLocation": {
+      "value": "${AZURE_DOCUMENT_INTELLIGENCE_LOCATION}"
+    },
+    "documentIntelligenceSkuName": {
+      "value": "${AZURE_DOCUMENT_INTELLIGENCE_SKU=S0}"
+    },
+
+    "authTenantId": {
+      "value": "${AZURE_AUTH_TENANT_ID}"
+    },
+    "serverAppId": {
+      "value": "${AZURE_SERVER_APP_ID}"
+    },
+    "serverAppSecret": {
+      "value": "${AZURE_SERVER_APP_SECRET}"
+    },
+    "clientAppId": {
+      "value": "${AZURE_CLIENT_APP_ID}"
+    },
+    "clientAppSecret": {
+      "value": "${AZURE_CLIENT_APP_SECRET}"
+    },
+    "disableAppServicesAuthentication": {
+      "value": "${AZURE_DISABLE_APP_SERVICES_AUTHENTICATION=false}"
+    },
+    "enableUnauthenticatedAccess": {
+      "value": "${AZURE_ENABLE_UNAUTHENTICATED_ACCESS=false}"
+    },
+    "assignRoles": {
+      "value": "${ASSIGN_ROLES=true}"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
+    },
+
+    "publicNetworkAccess": {
+      "value": "${AZURE_PUBLIC_NETWORK_ACCESS=Disabled}"
+    },
+    "allowedIps": {
+      "value": "${AZURE_ALLOWED_IPS}"
+    },
+    "bypass": {
+      "value": "${AZURE_NETWORK_BYPASS=AzureServices}"
+    },
+    "usePrivateEndpoint": {
+      "value": "${AZURE_USE_PRIVATE_ENDPOINT=true}"
+    },
+    "useExistingVnet": {
+      "value": "${USE_EXISTING_VNET=false}"
+    },
+    "existingVnetSubscriptionId": {
+      "value": "${EXISTING_VNET_SUBSCRIPTION_ID}"
+    },
+    "existingVnetResourceGroupName": {
+      "value": "${EXISTING_VNET_RESOURCE_GROUP_NAME}"
+    },
+    "existingVnetName": {
+      "value": "${EXISTING_VNET_NAME}"
+    },
+    "existingBackendSubnetName": {
+      "value": "${EXISTING_BACKEND_SUBNET_NAME}"
+    },
+    "existingAppIntSubnetName": {
+      "value": "${EXISTING_APP_INT_SUBNET_NAME}"
+    },
+    "existingLogicIntSubnetName": {
+      "value": "${EXISTING_LOGIC_INT_SUBNET_NAME}"
+    },
+    "vnetAddressPrefix": {
+      "value": "${AZURE_VNET_ADDRESS_PREFIX=10.0.0.0/16}"
     },
     "subnetBackendAddressPrefix": {
       "value": "${AZURE_SUBNET_BACKEND_ADDRESS_PREFIX=10.0.1.0/24}"
@@ -341,38 +337,48 @@
     "subnetBackendName": {
       "value": "${AZURE_SUBNET_BACKEND_NAME=backend-subnet}"
     },
+    "subnetAppIntAddressPrefix": {
+      "value": "${AZURE_SUBNET_APP_INT_ADDRESS_PREFIX=10.0.2.0/24}"
+    },
+    "subnetAppIntName": {
+      "value": "${AZURE_SUBNET_APP_INT_NAME=app-int-subnet}"
+    },
     "subnetLogicIntAddressPrefix": {
       "value": "${AZURE_SUBNET_LOGIC_INT_ADDRESS_PREFIX=10.0.3.0/24}"
     },
     "subnetLogicIntName": {
       "value": "${AZURE_SUBNET_LOGIC_INT_NAME=logic-int-subnet}"
     },
-    "useApplicationInsights": {
-      "value": "${AZURE_USE_APPLICATION_INSIGHTS=true}"
-    },
-    "useEval": {
-      "value": "${AZURE_USE_EVAL=false}"
-    },
     "useExistingPrivateDnsZones": {
       "value": "${USE_EXISTING_PRIVATE_DNS_ZONES=false}"
     },
-    "useExistingVnet": {
-      "value": "${USE_EXISTING_VNET=false}"
+    "privateDnsZonesSubscriptionId": {
+      "value": "${PRIVATE_DNS_ZONES_SUBSCRIPTION_ID}"
     },
-    "useFoundry": {
-      "value": "${USE_FOUNDRY=none}"
+    "privateDnsZonesResourceGroupName": {
+      "value": "${PRIVATE_DNS_ZONES_RESOURCE_GROUP_NAME}"
     },
-    "useDocumentIntelligence": {
-      "value": "${USE_DOCUMENT_INTELLIGENCE=none}"
+    "linkPrivateEndpointToPrivateDnsZone": {
+      "value": "${LINK_PRIVATE_ENDPOINT_TO_PRIVATE_DNS_ZONE=true}"
     },
-    "useGPT4V": {
-      "value": "${AZURE_USE_GPT4V=true}"
+    "skipPrivateDnsZones": {
+      "value": "${SKIP_PRIVATE_DNS_ZONES=false}"
     },
-    "usePrivateEndpoint": {
-      "value": "${AZURE_USE_PRIVATE_ENDPOINT=true}"
+
+    "useApplicationInsights": {
+      "value": "${AZURE_USE_APPLICATION_INSIGHTS=true}"
     },
-    "vnetAddressPrefix": {
-      "value": "${AZURE_VNET_ADDRESS_PREFIX=10.0.0.0/16}"
+    "applicationInsightsName": {
+      "value": "${AZURE_APPLICATION_INSIGHTS}"
+    },
+    "logAnalyticsName": {
+      "value": "${AZURE_LOG_ANALYTICS}"
+    },
+    "runningOnGh": {
+      "value": "${GITHUB_ACTIONS}"
+    },
+    "runningOnAdo": {
+      "value": "${TF_BUILD}"
     }
   }
 }

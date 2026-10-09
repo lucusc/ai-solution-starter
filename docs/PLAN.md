@@ -183,32 +183,13 @@ Exit criteria:
 - Azure AI Search is clearly marked as planned but not implemented.
 - Every AI service module receives an independent review.
 
-### Phase 7 - Infrastructure parameter organization
-
-Organize `infra/main.parameters.json` into functional groups while preserving
-its flat deployment-parameters schema and every existing mapping. Expand the
-parameter catalog with matching sections, exact defaults, effective
-fallbacks, conditional requirements, and secret-handling guidance.
-
-The selected approach keeps one executable JSON file, uses blank lines rather
-than comments or nested objects, and adds no generation or merge step.
-Implementation remains subject to approval of a narrow presentation-only
-exception to the infrastructure preservation constraint; protected Bicep
-remains unchanged.
 
 See the
-[detailed Phase 7 implementation plan](phases/PHASE_7_IMPLEMENTATION_PLAN.md).
+
 
 Exit criteria:
 
-- All 124 current mappings and their substitution expressions remain unchanged.
-- Parameters follow the approved 7-group order.
-- The catalog documents every mapped parameter exactly once.
-- Operators can distinguish inline defaults, effective fallbacks, conditional
-  inputs, secrets, and hook/pipeline-managed values.
-- Focused validation rejects duplicate keys and organization/catalog drift.
-- Existing infrastructure behavior and Bicep checksums remain unchanged.
-- No Azure deployment is required or implied.
+
 - Work pauses for review before any separately approved commit or push.
 
 ## Review Protocol

@@ -1,123 +1,216 @@
 # Infrastructure Parameter Catalog
 
-`infra/main.parameters.json` is the executable parameter catalog. Values use
-Azure Developer CLI substitution and can be supplied through an azd
-environment or GitHub environment variables.
+`infra/main.parameters.json` is the executable parameter mapping. Its flat JSON object is grouped in the same seven functional sections as this catalog; Bicep parameter names and environment substitutions are the deployment contract.
 
-## Core deployment
 
-| Environment value | Purpose | Default |
-| --- | --- | --- |
-| `AZURE_ENV_NAME` | Environment identifier and naming seed | Required |
-| `AZURE_LOCATION` | Primary Azure location | Required |
-| `AZURE_RESOURCE_GROUP` | Primary resource group name | Generated |
-| `CREATE_RESOURCE_GROUP` | Create or reuse the primary resource group | `true` |
-| `ASSIGN_ROLES` | Create user and service identity role assignments | `true` |
-| `AZURE_PRINCIPAL_ID` | User or deployment principal receiving roles | Empty |
+## How values resolve
 
-## Hosting and registry
+Each value uses azd substitution of the form `${ENVIRONMENT_VARIABLE}` or `${ENVIRONMENT_VARIABLE=default}`. A value after `=` is the mapping default used when the environment value is not set. `${ENVIRONMENT_VARIABLE}` has no mapping default: supply that environment value rather than assuming an unset or blank value falls through to a Bicep default. This file explicitly supplies every mapped parameter, so Bicep declaration defaults apply only when a parameter is omitted by a different deployment caller; the table reports them for comparison, not as automatic fallbacks for this file. A blank value invokes a derived template behavior only where the table states it. Mapping defaults can differ from Bicep declaration defaults; the current differences are called out.
 
-| Environment value group | Purpose |
-| --- | --- |
-| `AZURE_APP_SERVICE*` | Backend Web App, plan, ASE, and SKU configuration |
-| `AZURE_LOGIC_APP_SERVICE*` | Logic App, plan, ASE, and SKU configuration |
-| `AZURE_CONTAINER_REGISTRY` | Optional explicit registry name |
-| `ALLOWED_ORIGIN` | Additional CORS origins |
+`Type` is the type declared by `infra/main.bicep`, not the JSON substitution string. `Handling` marks secure Bicep inputs, hook-managed values, and pipeline context. Store secrets only in azd secrets or GitHub environment secrets; do not commit local environment values.
 
-## Storage and database
+“Required by the Bicep declaration” means the declaration has no default; the selected deployment mode can impose additional requirements. Optional overrides should be supplied only when the mode requires them. Check Azure OpenAI model availability, region support, capacity, permissions, and cost before provisioning. Foundry and Document Intelligence selectors accept `new`, `existing`, or `none` and default to `none`; see [AI services](AI_SERVICES.md). The [networking matrix](NETWORKING_MATRIX.md) is authoritative for supported combinations.
 
-| Environment value group | Purpose |
-| --- | --- |
-| `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_RESOURCE_GROUP`, `AZURE_STORAGE_LOCATION`, `AZURE_STORAGE_SKU` | Primary Storage placement and SKU |
-| `AZURE_STORAGE_CONTAINER_NAME` | General content container; default `content` |
-| `AZURE_STORAGE_TOKEN_CONTAINER_NAME` | Token container; default `tokens` |
-| `AZURE_STORAGE_INSTRUCTIONS_CONTAINER_NAME` | Instruction container; default `instructions` |
-| `AZURE_STORAGE_INPUT_CONTAINER_NAME` | Input container; default `inputs` |
-| `AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE` | System instruction filename; default `system.md` |
-| `AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE` | Processing instruction filename; default `processing.md` |
-| `AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE` | Evaluation instruction filename; default `evaluation.md` |
-| `AZURE_COSMOSDB_ACCOUNT`, `AZURE_COSMOSDB_RESOURCE_GROUP`, `AZURE_COSMOSDB_LOCATION` | Cosmos DB placement |
-| `AZURE_COSMOSDB_DATABASE` | Database name; default `starter` |
-| `AZURE_COSMOSDB_CONTAINER` | Container name; default `inputs` |
-| `AZURE_COSMOSDB_SKU` | `free`, `provisioned`, or `serverless`; default `serverless` |
-| `AZURE_COSMOSDB_THROUGHPUT` | Provisioned throughput; default `400` |
-| `AZURE_COSMOSDB_API_VERSION` | Application-facing API version; default `2023-10-15` |
 
-## Azure OpenAI
+## Deployment context
 
-| Environment value group | Purpose |
-| --- | --- |
-| `OPENAI_HOST` | `azure`, `azure_custom`, or `openai` |
-| `DEPLOY_AZURE_OPENAI` | Create a new Azure OpenAI account |
-| `DEPLOY_AZURE_OPEN_MODELS` | Deploy models into an approved existing account |
-| `AZURE_OPENAI_SERVICE`, `AZURE_OPENAI_RESOURCE_GROUP`, `AZURE_OPENAI_LOCATION`, `AZURE_OPENAI_SERVICE_SKU` | Azure OpenAI account placement and SKU |
-| `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_CUSTOM_URL`, `AZURE_OPENAI_API_KEY` | Azure OpenAI client overrides |
-| `AZURE_OPENAI_CHATGPT_*` | Chat model, deployment, version, SKU, and capacity |
-| `AZURE_OPENAI_EMB_*` | Embedding model, dimensions, deployment, version, SKU, and capacity |
-| `AZURE_OPENAI_GPT4V_*` | Vision model, deployment, version, SKU, and capacity |
-| `AZURE_OPENAI_EVAL_*` | Optional evaluation model, deployment, version, SKU, and capacity |
-| `AZURE_USE_GPT4V`, `AZURE_USE_EVAL` | Enable optional deployments |
-| `OPENAI_API_KEY`, `OPENAI_API_ORGANIZATION` | Non-Azure OpenAI configuration |
+Set the environment name and primary region first. Both are required by the template.
 
-## Optional AI services
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `environmentName` | `AZURE_ENV_NAME` | `string` | No inline default | Environment name and resource naming seed. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `location` | `AZURE_LOCATION` | `string` | No inline default | Primary deployment region. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `createResourceGroup` | `CREATE_RESOURCE_GROUP` | `bool` | `true` | Whether to create the primary resource group. Bicep declaration default: `true`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `resourceGroupName` | `AZURE_RESOURCE_GROUP` | `string` | No inline default | Primary resource group name. Bicep declaration default: `''`. If empty, the template derives the resource group name from the environment. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
 
-Both services default to `none`. Values are case-sensitive.
+## Hosting
 
-| Environment value | Purpose | Default |
-| --- | --- | --- |
-| `USE_FOUNDRY` | `new`, `existing`, or `none` Foundry selection | `none` |
-| `AZURE_FOUNDRY_ACCOUNT` | New Foundry account name; generated when empty | Empty |
-| `AZURE_FOUNDRY_PROJECT` | Project to create or resolve | `starter` |
-| `AZURE_FOUNDRY_RESOURCE_GROUP` | New or existing account resource group | Primary resource group |
-| `AZURE_FOUNDRY_LOCATION` | New account/project location | Primary location |
-| `AZURE_FOUNDRY_SKU` | New Foundry account SKU | `S0` |
-| `EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID` | Full existing `AIServices` account ID | Empty |
-| `EXISTING_FOUNDRY_PROJECT_RESOURCE_ID` | Optional full existing project ID | Empty |
-| `FOUNDRY_CONNECT_BASE_OPENAI` | Add an AAD project connection to baseline Azure OpenAI | `false` |
-| `USE_DOCUMENT_INTELLIGENCE` | `new`, `existing`, or `none` selection | `none` |
-| `AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT` | New account name; generated when empty | Empty |
-| `AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP` | New or existing account resource group | Primary resource group |
-| `AZURE_DOCUMENT_INTELLIGENCE_LOCATION` | New account location | Primary location |
-| `AZURE_DOCUMENT_INTELLIGENCE_SKU` | New account SKU | `S0` |
-| `EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID` | Full existing `FormRecognizer` account ID | Empty |
-| `CONFIGURE_EXISTING_AI_SERVICES` | Permit module-owned RBAC, diagnostics, and private endpoints on selected existing accounts | `false` |
+Backend and Logic App settings configure app names, plans, SKUs, and optional ASE placement. Registry naming and CORS are grouped here because they are part of the application hosting setup.
 
-See [optional AI services](AI_SERVICES.md) for mode validation, existing
-resource behavior, and usage examples.
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `backendServiceName` | `AZURE_APP_SERVICE` | `string` | No inline default | Backend Web App name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `backendServicePlanName` | `AZURE_APP_SERVICE_PLAN` | `string` | No inline default | Backend App Service plan name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `backendServicePlanAseId` | `AZURE_APP_SERVICE_PLAN_ASE_ID` | `string` | No inline default | Backend App Service Environment plan resource ID. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `backendServiceSkuName` | `AZURE_APP_SERVICE_SKU` | `string` | `B1` | Backend App Service SKU name. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `backendServiceSkuTier` | `AZURE_APP_SERVICE_SKU_TIER` | `string` | `Basic` | Backend App Service SKU tier. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `containerRegistryName` | `AZURE_CONTAINER_REGISTRY` | `string` | No inline default | Container registry name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `allowedOrigin` | `ALLOWED_ORIGIN` | `string` | No inline default | Additional CORS origin(s). Bicep declaration default: `''`; semicolon-separated origins must start with `https://` and must not end with `/`. | Optional; set only for additional frontend origins. | Ordinary configuration; resource IDs and names are not credentials. |
+| `logicAppServiceName` | `AZURE_LOGIC_APP_SERVICE` | `string` | No inline default | Logic App name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `logicAppServicePlanName` | `AZURE_LOGIC_APP_SERVICE_PLAN` | `string` | No inline default | Logic App Service plan name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `logicAppServiceAseId` | `AZURE_LOGIC_APP_SERVICE_ASE_ID` | `string` | No inline default | Logic App Service Environment plan resource ID. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `logicAppServiceSkuName` | `AZURE_LOGIC_APP_SERVICE_SKU` | `string` | `WS1` | Logic App Service SKU name. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `logicAppServiceSkuTier` | `AZURE_LOGIC_APP_SERVICE_SKU_TIER` | `string` | `WorkflowStandard` | Logic App Service SKU tier. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
 
-## Authentication
+## Data services
 
-| Environment value | Purpose |
-| --- | --- |
-| `AZURE_AUTH_TENANT_ID` | Optional authentication tenant override |
-| `AZURE_SERVER_APP_ID`, `AZURE_SERVER_APP_SECRET` | Server application registration |
-| `AZURE_CLIENT_APP_ID`, `AZURE_CLIENT_APP_SECRET` | SPA application registration |
-| `AZURE_DISABLE_APP_SERVICES_AUTHENTICATION` | Force application-managed authentication |
-| `AZURE_ENABLE_UNAUTHENTICATED_ACCESS` | Allow anonymous App Service access |
-| `AZURE_BYPASS_AUTHENTICATION_SETUP` | Skip application registration hooks |
+Storage and Cosmos DB are separate subsections because they configure different data services; both may be used by the backend and workflow.
+
+### Storage
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `storageAccountName` | `AZURE_STORAGE_ACCOUNT` | `string` | No inline default | Storage account name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageResourceGroupName` | `AZURE_STORAGE_RESOURCE_GROUP` | `string` | No inline default | Storage account resource group. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageResourceGroupLocation` | `AZURE_STORAGE_LOCATION` | `string` | No inline default | Storage resource group location. Bicep declaration default: `location`. Defaults to the primary `location` parameter. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageSkuName` | `AZURE_STORAGE_SKU` | `string` | `Standard_LRS` | Storage account SKU. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageContainerName` | `AZURE_STORAGE_CONTAINER_NAME` | `string` | `content` | General content container name. Bicep declaration default: `'content'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageTokenContainerName` | `AZURE_STORAGE_TOKEN_CONTAINER_NAME` | `string` | `tokens` | Token container name. Bicep declaration default: `'tokens'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageInstructionsContainerName` | `AZURE_STORAGE_INSTRUCTIONS_CONTAINER_NAME` | `string` | `instructions` | Instruction container name. Bicep declaration default: `'instructions'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageInputContainerName` | `AZURE_STORAGE_INPUT_CONTAINER_NAME` | `string` | `inputs` | Input container name. Bicep declaration default: `'inputs'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageSystemInstructionsFile` | `AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE` | `string` | `system.md` | System instructions filename. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageProcessingInstructionsFile` | `AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE` | `string` | `processing.md` | Processing instructions filename. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `storageEvaluationInstructionsFile` | `AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE` | `string` | `evaluation.md` | Evaluation instructions filename. No Bicep declaration default; the parameter is required by the template. | Required by the Bicep declaration. | Ordinary configuration; resource IDs and names are not credentials. |
+
+### Cosmos DB
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `cosmosDbAccountName` | `AZURE_COSMOSDB_ACCOUNT` | `string` | No inline default | Cosmos DB account name. Bicep declaration default: `''`; the template generates a name when empty. | Optional name override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmodDbResourceGroupName` | `AZURE_COSMOSDB_RESOURCE_GROUP` | `string` | No inline default | Cosmos DB account resource group (preserving the existing Bicep parameter spelling). Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmosDbLocation` | `AZURE_COSMOSDB_LOCATION` | `string` | No inline default | Cosmos DB account location. Bicep declaration default: `''`; the template uses the primary deployment location when empty. | Optional location override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmosDbSkuName` | `AZURE_COSMOSDB_SKU` | `string` | `serverless` | Cosmos DB capacity mode. No Bicep declaration default; the parameter is required by the template. | See allowed values: `free`, `provisioned`, `serverless`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmosDbThroughput` | `AZURE_COSMOSDB_THROUGHPUT` | `int` | `400` | Cosmos DB provisioned throughput. Bicep declaration default: `400`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmosDbWorkItemDatabaseName` | `AZURE_COSMOSDB_DATABASE` | `string` | `starter` | Work-item database name. Bicep declaration default: `'starter'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmosDbWorkItemContainerName` | `AZURE_COSMOSDB_CONTAINER` | `string` | `inputs` | Work-item container name. Bicep declaration default: `'inputs'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `cosmosDbWorkItemApiVersion` | `AZURE_COSMOSDB_API_VERSION` | `string` | `2023-10-15` | Cosmos DB API version used by the template. Bicep declaration default: `'2023-10-15'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+
+## AI services
+
+Azure OpenAI provider/account settings, model deployment overrides, Foundry, and Document Intelligence share this group. Optional selectors precede dependent settings.
+
+### Azure OpenAI provider and account
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `openAiHost` | `OPENAI_HOST` | `string` | `azure` | AI provider/endpoint mode. No Bicep declaration default; the parameter is required by the template. | See allowed values: `azure`, `openai`, `azure_custom`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `deployAzureOpenAi` | `DEPLOY_AZURE_OPENAI` | `bool` | `true` | Whether to deploy an Azure OpenAI account. Bicep declaration default: `true`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `deployAzureOpenModels` | `DEPLOY_AZURE_OPEN_MODELS` | `bool` | `true` | Whether to deploy model deployments into the configured Azure OpenAI account. Bicep declaration default: `true`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `openAiServiceName` | `AZURE_OPENAI_SERVICE` | `string` | No inline default | Azure OpenAI account name. Bicep declaration default: `''`; the template generates a name when creating a new account. | Supply when referencing an existing Azure OpenAI account; otherwise optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `openAiResourceGroupName` | `AZURE_OPENAI_RESOURCE_GROUP` | `string` | No inline default | Azure OpenAI account resource group. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `openAiLocation` | `AZURE_OPENAI_LOCATION` | `string` | No inline default | Azure OpenAI account location. No Bicep declaration default; the parameter is required by the template. | Required; allowed: `canadaeast`, `eastus`, `eastus2`, `francecentral`, `switzerlandnorth`, `uksouth`, `japaneast`, `northcentralus`, `australiaeast`, `swedencentral`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `openAiSkuName` | `AZURE_OPENAI_SERVICE_SKU` | `string` | `S0` | Azure OpenAI account SKU. Bicep declaration default: `'S0'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `azureOpenAiApiVersion` | `AZURE_OPENAI_API_VERSION` | `string` | `2024-10-21` | Azure OpenAI API version. Bicep declaration default: `''`. Mapping default `2024-10-21` overrides Bicep default `''`. | Optional version override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `azureOpenAiCustomUrl` | `AZURE_OPENAI_CUSTOM_URL` | `string` | No inline default | Custom Azure OpenAI endpoint URL. Bicep declaration default: `''`. | Required when `OPENAI_HOST=azure_custom`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `azureOpenAiDisableKeys` | `AZURE_OPENAI_DISABLE_KEYS` | `bool` | `true` | Whether to disable key-based Azure OpenAI authentication. Bicep declaration default: `false`. Mapping default `true` overrides Bicep default `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `azureOpenAiApiKey` | `AZURE_OPENAI_API_KEY` | `string` | No inline default | Azure OpenAI API key. Bicep declaration default: `''`. | Required for key-based Azure OpenAI access when enabled; otherwise omit. | Secret; store only in azd/GitHub environment secrets. |
+| `openAiApiKey` | `OPENAI_API_KEY` | `string` | No inline default | OpenAI-compatible provider API key. Bicep declaration default: `''`. | Required when `OPENAI_HOST=openai`; otherwise omit. | Secret; store only in azd/GitHub environment secrets. |
+| `openAiApiOrganization` | `OPENAI_API_ORGANIZATION` | `string` | No inline default | OpenAI organization identifier. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+
+### Model deployment overrides
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `useGPT4V` | `AZURE_USE_GPT4V` | `bool` | `true` | Whether to enable the vision model deployment. Bicep declaration default: `true`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `useEval` | `AZURE_USE_EVAL` | `bool` | `false` | Whether to enable the evaluation model deployment. Bicep declaration default: `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `chatGptModelName` | `AZURE_OPENAI_CHATGPT_MODEL` | `string` | No inline default | Chat model name. Bicep declaration default: `''`; empty selects `gpt-4o`. | Optional model override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `chatGptDeploymentName` | `AZURE_OPENAI_CHATGPT_DEPLOYMENT` | `string` | No inline default | Chat deployment name. Bicep declaration default: `''`; empty selects `chat`. | Optional deployment override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `chatGptDeploymentVersion` | `AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION` | `string` | No inline default | Chat deployment model version. Bicep declaration default: `''`; empty selects `2024-11-20`. | Optional model-version override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `chatGptDeploymentSkuName` | `AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU` | `string` | No inline default | Chat deployment SKU. Bicep declaration default: `''`; empty selects `Standard`. | Optional SKU override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `chatGptDeploymentCapacity` | `AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY` | `int` | No inline default | Chat deployment capacity. Bicep declaration default: `0`; zero selects `30`. | Optional capacity override; zero selects the template value. | Ordinary configuration; resource IDs and names are not credentials. |
+| `embeddingModelName` | `AZURE_OPENAI_EMB_MODEL_NAME` | `string` | No inline default | Embedding model name. Bicep declaration default: `''`; empty selects `text-embedding-ada-002`. | Optional model override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `embeddingDeploymentName` | `AZURE_OPENAI_EMB_DEPLOYMENT` | `string` | No inline default | Embedding deployment name. Bicep declaration default: `''`; empty selects `embedding`. | Optional deployment override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `embeddingDeploymentVersion` | `AZURE_OPENAI_EMB_DEPLOYMENT_VERSION` | `string` | No inline default | Embedding deployment model version. Bicep declaration default: `''`; empty selects `2`. | Optional model-version override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `embeddingDeploymentSkuName` | `AZURE_OPENAI_EMB_DEPLOYMENT_SKU` | `string` | No inline default | Embedding deployment SKU. Bicep declaration default: `''`; empty selects `Standard`. | Optional SKU override. | Ordinary configuration; resource IDs and names are not credentials. |
+| `embeddingDeploymentCapacity` | `AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY` | `int` | No inline default | Embedding deployment capacity. Bicep declaration default: `0`; zero selects `30`. | Optional capacity override; zero selects the template value. | Ordinary configuration; resource IDs and names are not credentials. |
+| `embeddingDimensions` | `AZURE_OPENAI_EMB_DIMENSIONS` | `int` | No inline default | Embedding vector dimensions. Bicep declaration default: `0`; zero selects `1536`. | Optional dimensions override; zero selects the template value. | Ordinary configuration; resource IDs and names are not credentials. |
+| `gpt4vModelName` | `AZURE_OPENAI_GPT4V_MODEL_NAME` | `string` | No inline default | Vision model name. Bicep declaration default: `''`; empty selects `gpt-4o`. | Optional model override; used when `useGPT4V=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `gpt4vDeploymentName` | `AZURE_OPENAI_GPT4V_DEPLOYMENT` | `string` | No inline default | Vision deployment name. Bicep declaration default: `''`; empty selects `gpt-4o`. | Optional deployment override; used when `useGPT4V=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `gpt4vModelVersion` | `AZURE_OPENAI_GPT4V_MODEL_VERSION` | `string` | No inline default | Vision deployment model version. Bicep declaration default: `''`; empty selects `2024-11-20`. | Optional model-version override; used when `useGPT4V=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `gpt4vDeploymentSkuName` | `AZURE_OPENAI_GPT4V_DEPLOYMENT_SKU` | `string` | No inline default | Vision deployment SKU. Bicep declaration default: `''`; empty selects `Standard`. | Optional SKU override; used when `useGPT4V=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `gpt4vDeploymentCapacity` | `AZURE_OPENAI_GPT4V_DEPLOYMENT_CAPACITY` | `int` | No inline default | Vision deployment capacity. Bicep declaration default: `0`; zero selects `100`. | Optional capacity override; used when `useGPT4V=true`; zero selects the template value. | Ordinary configuration; resource IDs and names are not credentials. |
+| `evalModelName` | `AZURE_OPENAI_EVAL_MODEL_NAME` | `string` | No inline default | Evaluation model name. Bicep declaration default: `''`; empty selects `gpt-4o`. | Optional model override; used when `useEval=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `evalDeploymentName` | `AZURE_OPENAI_EVAL_DEPLOYMENT` | `string` | No inline default | Evaluation deployment name. Bicep declaration default: `''`; empty selects `eval-gpt-4o`. | Optional deployment override; used when `useEval=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `evalModelVersion` | `AZURE_OPENAI_EVAL_MODEL_VERSION` | `string` | No inline default | Evaluation deployment model version. Bicep declaration default: `''`; empty selects `2024-08-06`. | Optional model-version override; used when `useEval=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `evalDeploymentSkuName` | `AZURE_OPENAI_EVAL_DEPLOYMENT_SKU` | `string` | No inline default | Evaluation deployment SKU. Bicep declaration default: `''`; empty selects `Standard`. | Optional SKU override; used when `useEval=true`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `evalDeploymentCapacity` | `AZURE_OPENAI_EVAL_DEPLOYMENT_CAPACITY` | `int` | No inline default | Evaluation deployment capacity. Bicep declaration default: `0`; zero selects `30`. | Optional capacity override; used when `useEval=true`; zero selects the template value. | Ordinary configuration; resource IDs and names are not credentials. |
+
+### Optional AI services
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `configureExistingAiServices` | `CONFIGURE_EXISTING_AI_SERVICES` | `bool` | `false` | Whether the modules may configure RBAC, diagnostics, and private endpoints on selected existing AI services. Bicep declaration default: `false`. | Set `true` only when the selected existing AI service should receive module-managed configuration. | Ordinary configuration; resource IDs and names are not credentials. |
+| `useFoundry` | `USE_FOUNDRY` | `string` | `none` | Microsoft Foundry mode. Bicep declaration default: `'none'`. | Optional selector; `new`, `existing`, or `none` (default `none`). Resource IDs are required in `existing` mode. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryAccountName` | `AZURE_FOUNDRY_ACCOUNT` | `string` | No inline default | Foundry account name. Bicep declaration default: `''`. If empty, the template generates an account name. | Applies to Foundry `new` mode; project connection is independently optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryAccountResourceId` | `EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID` | `string` | No inline default | Existing Foundry account resource ID. Bicep declaration default: `''`. | Required when the corresponding Foundry resource is selected as `existing`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryProjectName` | `AZURE_FOUNDRY_PROJECT` | `string` | `starter` | Foundry project name. Bicep declaration default: `'starter'`. | Applies to Foundry `new` mode; project connection is independently optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryProjectResourceId` | `EXISTING_FOUNDRY_PROJECT_RESOURCE_ID` | `string` | No inline default | Existing Foundry project resource ID. Bicep declaration default: `''`. | Optional in Foundry `existing` mode; when omitted, the project is resolved by `foundryProjectName`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryResourceGroupName` | `AZURE_FOUNDRY_RESOURCE_GROUP` | `string` | No inline default | Foundry account resource group. Bicep declaration default: `''`. If empty, uses the primary resource group. | Applies to Foundry `new` mode; project connection is independently optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryLocation` | `AZURE_FOUNDRY_LOCATION` | `string` | No inline default | Foundry account location. Bicep declaration default: `location`. Defaults to the primary `location` parameter. | Applies to Foundry `new` mode; project connection is independently optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundrySkuName` | `AZURE_FOUNDRY_SKU` | `string` | `S0` | Foundry account SKU. Bicep declaration default: `'S0'`. | Applies to Foundry `new` mode; project connection is independently optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `foundryConnectBaseOpenAi` | `FOUNDRY_CONNECT_BASE_OPENAI` | `bool` | `false` | Whether to create a Foundry project connection to the base Azure OpenAI account. Bicep declaration default: `false`. | Applies to Foundry `new` mode; project connection is independently optional. | Ordinary configuration; resource IDs and names are not credentials. |
+| `useDocumentIntelligence` | `USE_DOCUMENT_INTELLIGENCE` | `string` | `none` | Document Intelligence mode. Bicep declaration default: `'none'`. | Optional selector; `new`, `existing`, or `none` (default `none`). Resource IDs are required in `existing` mode. | Ordinary configuration; resource IDs and names are not credentials. |
+| `documentIntelligenceName` | `AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT` | `string` | No inline default | Document Intelligence account name. Bicep declaration default: `''`. | Applies when Document Intelligence is `new`; account placement settings are ignored for `existing`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `documentIntelligenceResourceId` | `EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID` | `string` | No inline default | Existing Document Intelligence resource ID. Bicep declaration default: `''`. | Required when Document Intelligence is `existing`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `documentIntelligenceResourceGroupName` | `AZURE_DOCUMENT_INTELLIGENCE_RESOURCE_GROUP` | `string` | No inline default | Document Intelligence resource group. Bicep declaration default: `''`. If empty, uses the primary resource group. | Applies when Document Intelligence is `new`; account placement settings are ignored for `existing`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `documentIntelligenceLocation` | `AZURE_DOCUMENT_INTELLIGENCE_LOCATION` | `string` | No inline default | Document Intelligence account location. Bicep declaration default: `location`. Defaults to the primary `location` parameter. | Applies when Document Intelligence is `new`; account placement settings are ignored for `existing`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `documentIntelligenceSkuName` | `AZURE_DOCUMENT_INTELLIGENCE_SKU` | `string` | `S0` | Document Intelligence account SKU. Bicep declaration default: `'S0'`. | Applies when Document Intelligence is `new`; account placement settings are ignored for `existing`. | Ordinary configuration; resource IDs and names are not credentials. |
+
+## Identity and access
+
+Authentication application values are normally managed by azd hooks; role settings control template role assignments. The secret values below are secure Bicep parameters.
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `authTenantId` | `AZURE_AUTH_TENANT_ID` | `string` | No inline default | Optional Microsoft Entra tenant override. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `serverAppId` | `AZURE_SERVER_APP_ID` | `string` | No inline default | Server application registration ID. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | authentication-hook managed unless hook setup is bypassed. |
+| `serverAppSecret` | `AZURE_SERVER_APP_SECRET` | `string` | No inline default | Server application registration secret. Bicep declaration default: `''`. | Supplied by the authentication hook unless setup is bypassed. | Secret; store only in azd/GitHub environment secrets; authentication-hook managed unless bypassed. |
+| `clientAppId` | `AZURE_CLIENT_APP_ID` | `string` | No inline default | Client/SPA application registration ID. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | authentication-hook managed unless hook setup is bypassed. |
+| `clientAppSecret` | `AZURE_CLIENT_APP_SECRET` | `string` | No inline default | Client/SPA application registration secret. Bicep declaration default: `''`. | Supplied by the authentication hook unless setup is bypassed. | Secret; store only in azd/GitHub environment secrets; authentication-hook managed unless bypassed. |
+| `disableAppServicesAuthentication` | `AZURE_DISABLE_APP_SERVICES_AUTHENTICATION` | `bool` | `false` | Whether to disable built-in App Service authentication. Bicep declaration default: `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `enableUnauthenticatedAccess` | `AZURE_ENABLE_UNAUTHENTICATED_ACCESS` | `bool` | `false` | Whether to allow unauthenticated App Service access. Bicep declaration default: `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `assignRoles` | `ASSIGN_ROLES` | `bool` | `true` | Whether to create the configured role assignments. Bicep declaration default: `false`. Mapping default `true` overrides Bicep default `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `principalId` | `AZURE_PRINCIPAL_ID` | `string` | No inline default | User or deployment principal receiving role assignments. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
 
 ## Networking
 
-| Environment value group | Purpose |
-| --- | --- |
-| `AZURE_PUBLIC_NETWORK_ACCESS` | Default public access state; default `Disabled` |
-| `AZURE_ALLOWED_IPS` | Comma-separated public IP allowlist |
-| `AZURE_NETWORK_BYPASS` | Trusted Azure service bypass |
-| `AZURE_USE_PRIVATE_ENDPOINT` | Enable private networking |
-| `AZURE_VNET_ADDRESS_PREFIX` | Generated VNet address range |
-| `AZURE_SUBNET_*` | Backend, application-integration, and Logic App subnet names and ranges |
-| `USE_EXISTING_VNET`, `EXISTING_VNET_*` | Integrate with an existing VNet |
-| `USE_EXISTING_PRIVATE_DNS_ZONES`, `PRIVATE_DNS_ZONES_*` | Reuse central private DNS zones |
-| `LINK_PRIVATE_ENDPOINT_TO_PRIVATE_DNS_ZONE` | Link reused zones to the selected VNet |
-| `SKIP_PRIVATE_DNS_ZONES` | Skip private DNS creation and linking |
+Choose a supported combination from the [networking matrix](NETWORKING_MATRIX.md). Existing-VNet fields apply only when that mode is selected; DNS settings depend on the selected private DNS mode.
+
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `publicNetworkAccess` | `AZURE_PUBLIC_NETWORK_ACCESS` | `string` | `Disabled` | Public network access setting. Bicep declaration default: `'Disabled'`. | See allowed values: `Enabled`, `Disabled`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `allowedIps` | `AZURE_ALLOWED_IPS` | `string` | No inline default | Comma-separated public IP allowlist. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `bypass` | `AZURE_NETWORK_BYPASS` | `string` | `AzureServices` | Trusted Azure-services firewall bypass setting. Bicep declaration default: `'AzureServices'`. | See allowed values: `None`, `AzureServices`. | Ordinary configuration; resource IDs and names are not credentials. |
+| `usePrivateEndpoint` | `AZURE_USE_PRIVATE_ENDPOINT` | `bool` | `true` | Whether to enable private endpoint networking. Bicep declaration default: `false`. Mapping default `true` overrides Bicep default `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `useExistingVnet` | `USE_EXISTING_VNET` | `bool` | `false` | Whether to integrate with an existing VNet. Bicep declaration default: `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `existingVnetSubscriptionId` | `EXISTING_VNET_SUBSCRIPTION_ID` | `string` | No inline default | Existing VNet subscription ID. Bicep declaration default: `''`. | Required when `USE_EXISTING_VNET=true`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `existingVnetResourceGroupName` | `EXISTING_VNET_RESOURCE_GROUP_NAME` | `string` | No inline default | Existing VNet resource group. Bicep declaration default: `''`. | Required when `USE_EXISTING_VNET=true`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `existingVnetName` | `EXISTING_VNET_NAME` | `string` | No inline default | Existing VNet name. Bicep declaration default: `''`. | Required when `USE_EXISTING_VNET=true`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `existingBackendSubnetName` | `EXISTING_BACKEND_SUBNET_NAME` | `string` | No inline default | Existing backend/private-endpoint subnet name. Bicep declaration default: `''`. | Required when `USE_EXISTING_VNET=true`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `existingAppIntSubnetName` | `EXISTING_APP_INT_SUBNET_NAME` | `string` | No inline default | Existing App Service integration subnet name. Bicep declaration default: `''`. | Required when `USE_EXISTING_VNET=true`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `existingLogicIntSubnetName` | `EXISTING_LOGIC_INT_SUBNET_NAME` | `string` | No inline default | Existing Logic App integration subnet name. Bicep declaration default: `''`. | Required when `USE_EXISTING_VNET=true`; otherwise omit. | Ordinary configuration; resource IDs and names are not credentials. |
+| `vnetAddressPrefix` | `AZURE_VNET_ADDRESS_PREFIX` | `string` | `10.0.0.0/16` | Generated VNet address range. Bicep declaration default: `'10.0.0.0/16'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `subnetBackendAddressPrefix` | `AZURE_SUBNET_BACKEND_ADDRESS_PREFIX` | `string` | `10.0.1.0/24` | Generated backend/private-endpoint subnet range. Bicep declaration default: `'10.0.1.0/24'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `subnetBackendName` | `AZURE_SUBNET_BACKEND_NAME` | `string` | `backend-subnet` | Generated backend/private-endpoint subnet name. Bicep declaration default: `'backend-subnet'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `subnetAppIntAddressPrefix` | `AZURE_SUBNET_APP_INT_ADDRESS_PREFIX` | `string` | `10.0.2.0/24` | Generated App Service integration subnet range. Bicep declaration default: `'10.0.2.0/24'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `subnetAppIntName` | `AZURE_SUBNET_APP_INT_NAME` | `string` | `app-int-subnet` | Generated App Service integration subnet name. Bicep declaration default: `'app-int-subnet'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `subnetLogicIntAddressPrefix` | `AZURE_SUBNET_LOGIC_INT_ADDRESS_PREFIX` | `string` | `10.0.3.0/24` | Generated Logic App integration subnet range. Bicep declaration default: `'10.0.3.0/24'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `subnetLogicIntName` | `AZURE_SUBNET_LOGIC_INT_NAME` | `string` | `logic-int-subnet` | Generated Logic App integration subnet name. Bicep declaration default: `'logic-int-subnet'`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `useExistingPrivateDnsZones` | `USE_EXISTING_PRIVATE_DNS_ZONES` | `bool` | `false` | Whether to reuse private DNS zones. Bicep declaration default: `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `privateDnsZonesSubscriptionId` | `PRIVATE_DNS_ZONES_SUBSCRIPTION_ID` | `string` | No inline default | Existing private DNS zone subscription ID. Bicep declaration default: `''`. | Conditional on private DNS mode; see the networking matrix. | Ordinary configuration; resource IDs and names are not credentials. |
+| `privateDnsZonesResourceGroupName` | `PRIVATE_DNS_ZONES_RESOURCE_GROUP_NAME` | `string` | No inline default | Existing private DNS zone resource group. Bicep declaration default: `''`. | Conditional on private DNS mode; see the networking matrix. | Ordinary configuration; resource IDs and names are not credentials. |
+| `linkPrivateEndpointToPrivateDnsZone` | `LINK_PRIVATE_ENDPOINT_TO_PRIVATE_DNS_ZONE` | `bool` | `true` | Whether to link reused private DNS zones to the selected VNet. Bicep declaration default: `false`. Mapping default `true` overrides Bicep default `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `skipPrivateDnsZones` | `SKIP_PRIVATE_DNS_ZONES` | `bool` | `false` | Whether to leave private DNS zone management external. Bicep declaration default: `false`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
 
 ## Monitoring and pipeline context
 
-| Environment value group | Purpose |
-| --- | --- |
-| `AZURE_USE_APPLICATION_INSIGHTS` | Enable monitoring resources |
-| `AZURE_APPLICATION_INSIGHTS`, `AZURE_LOG_ANALYTICS` | Optional explicit resource names |
-| `GITHUB_ACTIONS`, `TF_BUILD` | Select user or service-principal role assignment type |
+Monitoring is user-selectable; GitHub and Azure DevOps context values are normally supplied by the corresponding pipeline.
 
-Secure parameters must be stored as azd secrets or GitHub environment secrets,
-not committed values.
+| Bicep parameter | Environment variable | Type | Mapping default | Purpose and template behavior | Required when / allowed values | Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| `useApplicationInsights` | `AZURE_USE_APPLICATION_INSIGHTS` | `bool` | `true` | Whether to enable Application Insights monitoring. Bicep declaration default: `true`. | Optional boolean selector; default shown in the mapping-default column. | Ordinary configuration; resource IDs and names are not credentials. |
+| `applicationInsightsName` | `AZURE_APPLICATION_INSIGHTS` | `string` | No inline default | Application Insights resource name. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `logAnalyticsName` | `AZURE_LOG_ANALYTICS` | `string` | No inline default | Log Analytics workspace name. Bicep declaration default: `''`. | Optional override; see the deployment mode and template behavior. | Ordinary configuration; resource IDs and names are not credentials. |
+| `runningOnGh` | `GITHUB_ACTIONS` | `string` | No inline default | GitHub Actions deployment-context indicator. Bicep declaration default: `''`. | Supplied by GitHub Actions or Azure DevOps; do not set as a user preference. | Pipeline context; supplied by the corresponding CI system. |
+| `runningOnAdo` | `TF_BUILD` | `string` | No inline default | Azure DevOps deployment-context indicator. Bicep declaration default: `''`. | Supplied by GitHub Actions or Azure DevOps; do not set as a user preference. | Pipeline context; supplied by the corresponding CI system. |
+
+
+## Supplementary deployment inputs not mapped to Bicep
+
+These values are consumed by deployment hooks or workflow configuration rather than `infra/main.parameters.json` and are not included in the 124-row parameter count.
+
+| Environment value | Purpose | Handling |
+| --- | --- | --- |
+| `AZURE_BYPASS_AUTHENTICATION_SETUP` | Skip azd preprovision/postprovision application-registration hooks; when enabled, provide compatible app registration settings through the approved environment process | Boolean hook control; not a Bicep parameter |
+| `AZURE_SUBSCRIPTION_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` | Azure Developer CLI/GitHub OIDC deployment context | Configure as environment/workflow values; never treat as application secrets unless the credential type requires it |
+| GitHub OIDC federation and environment credentials | Authenticate the deployment workflow to Azure | Configure through GitHub environment and federated identity; do not put credentials in this catalog |
