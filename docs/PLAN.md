@@ -60,9 +60,18 @@ Exit criteria:
 
 ### Phase 1 - Infrastructure and deployment baseline
 
-In a local staging area outside the Git worktree, identify the minimum
+In a local staging area outside the Git worktree, inventory the complete proven
 infrastructure and deployment behavior required by the starter. Generalize and
 sanitize it before introducing it to this repository.
+
+The approved scope is the full proven capability baseline, including Bicep,
+Azure Developer CLI configuration, deployment scripts, and GitHub Actions.
+Architecture and operational behavior must be preserved while names and
+descriptive metadata are generalized. Real Azure provisioning is a separate
+decision gate after local validation.
+
+See the
+[detailed Phase 1 implementation plan](phases/PHASE_1_IMPLEMENTATION_PLAN.md).
 
 Exit criteria:
 

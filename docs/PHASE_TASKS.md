@@ -5,6 +5,12 @@ for each phase must be refined and approved before work begins.
 
 ## Phase 1 - Infrastructure and Deployment Baseline
 
+The implementation-ready task plan, dependencies, deliverables, validation
+steps, privacy controls, and review gates are defined in
+[Phase 1 Implementation Plan](phases/PHASE_1_IMPLEMENTATION_PLAN.md).
+
+The summary below remains the high-level backlog.
+
 ### 1.1 Define the target resource contract
 
 - Confirm required hosting, storage, database, workflow, AI, identity,
