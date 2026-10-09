@@ -153,16 +153,32 @@ Exit criteria:
 
 ### Phase 6 - Optional Azure AI extensions
 
-Plan and implement optional Microsoft Foundry, Azure AI Search, and Azure AI
-Document Intelligence capabilities through additive infrastructure.
+Plan and implement optional Microsoft Foundry and Azure AI Document
+Intelligence capabilities through additive infrastructure. Plan Azure AI
+Search as a future extension without implementing Search resources or
+examples in this phase.
+
+The approved approach uses independent extension Bicep entry points and
+scripts outside the protected `infra/` baseline. Environment variables select
+each extension and either deploy a new service or reference a compatible
+pre-existing service. A wrapper composes selected extensions without changing
+the base `azd provision` path.
+
+See the
+[detailed Phase 6 implementation plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md).
 
 Exit criteria:
 
 - Each extension is independently optional.
+- Foundry and Document Intelligence support deploy-or-reference-existing
+  modes.
+- No selected extensions is a successful no-op.
 - Base deployments remain compatible.
 - Identity, networking, diagnostics, region availability, quotas, and cost are
   documented.
-- Each extension includes a minimal example and removal instructions.
+- Foundry and Document Intelligence include documentation-only REST/SDK usage
+  commands and removal instructions.
+- Azure AI Search is clearly marked as planned but not implemented.
 - Every extension receives an independent review.
 
 ## Review Protocol

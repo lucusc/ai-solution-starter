@@ -149,7 +149,8 @@ replacement-boundary, and review contracts are defined in
 
 ## Phase 4 - Logic App and Azure AI Integration
 
-**Status:** Implemented locally and pending the Phase 5 review gate.
+**Status:** Detailed implementation planning complete; implementation has not
+started.
 
 The implementation-ready trigger, concurrency, managed-identity, structured
 output, failure, observability, testing, and deployment-validation contracts
@@ -196,7 +197,7 @@ are defined in
 
 ## Phase 5 - Starter Readiness
 
-**Status:** Detailed implementation planning complete and awaiting approval.
+**Status:** Implemented locally and pending the Phase 5 review gate.
 
 The implementation-ready documentation, replacement, synthetic-sample,
 governance, CI, clean-room local-validation, and review contracts are defined
@@ -242,33 +243,63 @@ in [Phase 5 Implementation Plan](phases/PHASE_5_IMPLEMENTATION_PLAN.md).
 
 ## Phase 6 - Optional Azure AI Extensions
 
+**Status:** Detailed implementation planning complete and awaiting approval.
+
+The additive deployment contract, approved service scope, environment-variable
+selection behavior, independent review gates, and validation requirements are
+defined in
+[Phase 6 Implementation Plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md).
+
 ### 6.1 Approve an additive infrastructure strategy
 
-- Evaluate a separate template entry point or equivalent additive mechanism.
+- Add independent extension Bicep entry points and scripts outside `infra/`.
 - Do not modify or refactor the base infrastructure baseline.
-- Define output and configuration integration with the application.
+- Select extensions with explicit environment-variable booleans.
+- Support deployment of new services or reference to compatible pre-existing
+  services.
+- Define normalized outputs, ownership, and safe removal behavior.
 
 ### 6.2 Add Microsoft Foundry integration
 
-- Add optional project resources, identity, RBAC, diagnostics, and a minimal
-  application example.
+- Add an optional compatible `AIServices` account and Foundry project, or
+  reference approved existing resources.
+- Add identity, RBAC, networking, diagnostics, and an optional managed-identity
+  connection to the baseline Azure OpenAI resource.
+- Provide documentation-only REST/SDK usage commands.
+- Do not create an agent, capability host, store, model deployment, or base
+  application integration.
 
 ### 6.3 Add Azure AI Search integration
 
-- Add optional search resources, index schema, identity, networking,
-  diagnostics, and a minimal indexing/query example.
+- Create a future implementation plan only.
+- Document proposed resources, identity, networking, outputs, indexing
+  decisions, and approval gates.
+- Do not add Search resources, scripts, indexes, dependencies, or examples in
+  Phase 6.
 
 ### 6.4 Add Azure AI Document Intelligence integration
 
-- Add optional service resources, identity, networking, diagnostics, and a
-  minimal extraction example.
+- Add an optional `FormRecognizer` account or reference an approved existing
+  account.
+- Add identity, RBAC, networking, diagnostics, and prebuilt Layout operational
+  guidance.
+- Provide documentation-only REST/SDK commands and normalized extraction
+  guidance.
+- Do not add custom-model training or base application integration.
 
 ### 6.5 Validate independent composition
 
-- Test each extension alone and in approved combinations.
+- Add a selector wrapper that invokes the independent Foundry and Document
+  Intelligence entry points.
+- Test disabled, deploy, and existing-resource combinations without Azure.
 - Document quotas, region support, permissions, cost, and removal.
 - Confirm deployments without extensions remain unchanged.
+- Perform live Azure validation only after explicit approval for each
+  increment.
 
 ### Phase 6 review gate
 
-- Review and release each extension independently.
+- Review the extension contract, Foundry, Document Intelligence, composition,
+  and any approved live validation independently.
+- Keep Azure AI Search implementation deferred.
+- Do not push or release without separate approval.
