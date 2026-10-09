@@ -61,6 +61,8 @@ The summary below remains the high-level backlog.
 
 ## Phase 2 - Backend and Data Contracts
 
+**Status:** Implemented locally and pending the Phase 2 review gate.
+
 The implementation-ready schema, API contract, failure-compensation behavior,
 test matrix, dependencies, and review gates are defined in
 [Phase 2 Implementation Plan](phases/PHASE_2_IMPLEMENTATION_PLAN.md).

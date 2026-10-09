@@ -1,0 +1,6 @@
+bind = ["0.0.0.0:8000"]
+accesslog = "-"
+errorlog = "-"
+graceful_timeout = 30
+keep_alive_timeout = 5
+workers = 1

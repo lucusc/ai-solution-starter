@@ -14,7 +14,7 @@ if [ "$deploy_component" != "backend" ] && [ "$deploy_component" != "agent" ] &&
 fi
 
 resource_group=$(azd env get-value AZURE_RESOURCE_GROUP)
-acr_name=$(azd env get-value AZURE_CONTAINER_REGISTRY_ENDPOINT)
+acr_name=$(azd env get-value AZURE_CONTAINER_REGISTRY_NAME)
 
 if [ "$deploy_component" == "backend" ] || [ "$deploy_component" == "all" ]; then
     echo "Deploying backend..."

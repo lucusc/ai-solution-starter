@@ -2,9 +2,10 @@
 
 ## Status
 
-**Planning only.** Phase 2 backend code has not been implemented.
-
-Implementation must not begin until this plan is explicitly approved.
+**Implemented locally; pending review.** The Phase 2 backend implementation is
+complete in an unpushed local commit. Phase 3 must not begin and this
+implementation must not be pushed until the review gate is explicitly
+approved.
 
 ## Objective
 

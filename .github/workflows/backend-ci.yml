@@ -1,0 +1,57 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "app/backend/**"
+      - "pyproject.toml"
+      - "scripts/smoke_backend_azure.py"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app/backend/**"
+      - "pyproject.toml"
+      - "scripts/smoke_backend_azure.py"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            app/backend/requirements.txt
+            app/backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r app/backend/requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Run lint
+        run: |
+          python -m ruff check app/backend scripts/smoke_backend_azure.py
+          python -m ruff format --check app/backend scripts/smoke_backend_azure.py
+
+      - name: Run type checks
+        run: python -m mypy app/backend/backend
+
+      - name: Build container
+        run: docker build -f app/backend/Dockerfile app/backend
+
+      - name: Verify infrastructure baseline
+        run: ./scripts/verify_bicep_baseline.sh
