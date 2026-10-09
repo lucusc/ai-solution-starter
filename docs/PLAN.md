@@ -137,14 +137,19 @@ Exit criteria:
 Complete documentation, sample content, continuous integration, deployment
 validation, replacement guidance, and release preparation.
 
+See the
+[detailed Phase 5 implementation plan](phases/PHASE_5_IMPLEMENTATION_PLAN.md).
+
 Exit criteria:
 
 - A new team can set up, run, deploy, and replace the sample app from the
   documentation.
 - All examples are synthetic and generic.
 - CI validates code, deployment assets, and infrastructure integrity.
-- A clean-environment deployment succeeds.
-- Work pauses for release review.
+- A fresh local clone passes documented validation without relying on
+  developer-local state or Azure access.
+- No tag, release, or template configuration is created.
+- Work pauses for starter-readiness review.
 
 ### Phase 6 - Optional Azure AI extensions
 

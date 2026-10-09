@@ -196,12 +196,19 @@ are defined in
 
 ## Phase 5 - Starter Readiness
 
+**Status:** Detailed implementation planning complete and awaiting approval.
+
+The implementation-ready documentation, replacement, synthetic-sample,
+governance, CI, clean-room local-validation, and review contracts are defined
+in [Phase 5 Implementation Plan](phases/PHASE_5_IMPLEMENTATION_PLAN.md).
+
 ### 5.1 Complete documentation
 
 - Document prerequisites, setup, local development, deployment, validation, and
   troubleshooting.
 - Document architecture and application/infrastructure boundaries.
 - Document expected Azure resources and cost drivers.
+- Keep current, planned, and optional component status explicit.
 
 ### 5.2 Create the replacement guide
 
@@ -214,20 +221,24 @@ are defined in
 
 - Validate backend and frontend code.
 - Validate infrastructure and deployment assets.
+- Validate the workflow package when Phase 4 is implemented.
+- Validate documentation links, generated-artifact policy, and synthetic sample
+  generation.
 - Detect infrastructure baseline drift.
-- Scan for secrets, private identifiers, and prohibited content.
+- Enforce repository-specific private-source and prohibited-content policy.
 
-### 5.4 Perform clean-room release validation
+### 5.4 Perform clean-room local validation
 
-- Clone the public repository into a new directory.
+- Clone the candidate repository into a fresh local directory.
 - Follow documentation without relying on developer-local state.
-- Provision, deploy, and smoke-test a clean environment.
-- Confirm Git history and release artifacts contain only approved material.
+- Run local, package, container, and repository-policy validation without Azure
+  access.
+- Confirm Git history and tracked artifacts contain only approved material.
 
 ### Phase 5 review gate
 
-- Approve the repository for reusable starter release.
-- Decide release versioning and template-distribution approach.
+- Review the repository for reusable starter readiness.
+- Do not create a tag, release, or template configuration in Phase 5.
 
 ## Phase 6 - Optional Azure AI Extensions
 
