@@ -31,9 +31,9 @@ the new capabilities are not selected:
 8. prove that a deployment with no selected services preserves the current
    base resource graph and behavior.
 
-The new services are part of the base infrastructure install, but remain
-disabled by default. Phase 6 will not integrate them into the base backend,
-frontend, Logic App, or work-item data model.
+The new services are part of the base infrastructure install, but default to
+`none`. Phase 6 will not integrate them into the base backend, frontend, Logic
+App, or work-item data model.
 
 ## Non-Negotiable Infrastructure Rule
 
@@ -67,7 +67,7 @@ Any change outside the additive scope above is a stop condition.
 | Base infrastructure | Preserve existing resource graph and behavior; add only approved conditional AI wiring |
 | Service selection | Optional base-infrastructure parameters sourced from deployment environment variables |
 | New versus existing services | Support deployment of new services and reference to approved pre-existing services |
-| Enablement shape | Per-service deploy boolean plus optional existing-resource variables |
+| Enablement shape | Per-service mode with `new`, `existing`, or `none`; default `none` |
 | Deployment integration | Conditional modules under `infra/modules/ai/` invoked by `infra/main.bicep` |
 | Composition | One base deployment selects zero, one, or both services |
 | Networking | Mirror applicable baseline public, restricted-public, generated-private, existing-VNet, existing-DNS, and externally managed DNS modes |
@@ -116,8 +116,7 @@ Any change outside the additive scope above is a stop condition.
 ### Excluded
 
 - optimization or behavioral changes to the existing baseline modules;
-- automatic deployment of either new AI service when its selector is false and
-  no existing-resource reference is supplied;
+- automatic deployment of either new AI service when its mode is `none`;
 - modifications to `azure.yaml` unless separately required by the base
   parameter contract;
 - changes to base infrastructure outputs or application settings;
@@ -217,23 +216,30 @@ boundaries must remain:
 
 ### Selection parameters and environment variables
 
-The base Bicep deployment will use explicit booleans populated by the
+The base Bicep deployment will use explicit string modes populated by the
 deployment environment:
 
 | Environment value | Default | Meaning |
 | --- | --- | --- |
-| `DEPLOY_FOUNDRY` | `false` | Create or enable Foundry resources when no existing resource ID is supplied |
-| `DEPLOY_DOCUMENT_INTELLIGENCE` | `false` | Create or enable Document Intelligence when no existing resource ID is supplied |
+| `USE_FOUNDRY` | `none` | `new` deploys Foundry resources, `existing` references compatible existing resources, and `none` skips Foundry |
+| `USE_DOCUMENT_INTELLIGENCE` | `none` | `new` deploys Document Intelligence, `existing` references a compatible existing resource, and `none` skips Document Intelligence |
 
 Azure AI Search has no deployment selector in Phase 6 because its
 implementation is deferred.
 
-The word `DEPLOY` enables creation when no existing resource reference is
-supplied. An existing resource reference always takes precedence, even when
-the corresponding deploy boolean is `false`; the module validates and
-references that resource instead of creating a duplicate. If the boolean is
-false and no existing resource information is supplied, the service is
-skipped.
+Both parameters must use an `@allowed` constraint containing only:
+
+- `new`;
+- `existing`; and
+- `none`.
+
+The mode is authoritative:
+
+- `new` creates the service resources defined by the module;
+- `existing` requires compatible existing-resource information and does not
+  create the parent service;
+- `none` skips the service module and requires existing-resource inputs for
+  that service to be empty.
 
 ### Foundry existing-resource variables
 
@@ -269,11 +275,10 @@ the base outputs or parameter file.
 The base parameter contract and AI modules must implement these rules before
 resource creation:
 
-1. A full existing resource ID enters reuse mode even when its deploy boolean
-   is false.
-2. A false deploy boolean with no existing resource ID skips the service.
-3. A true deploy boolean with no existing resource ID enters new-resource
-   mode.
+1. `new` requires new-resource configuration and rejects existing parent
+   resource IDs.
+2. `existing` requires a complete compatible existing parent resource ID.
+3. `none` skips the service and rejects stale existing-resource configuration.
 4. A supplied existing project ID takes precedence over creating a Foundry
    project, after compatibility validation.
 5. Partial existing-resource identifiers are invalid; scripts must not guess
@@ -287,11 +292,11 @@ resource creation:
 10. Secrets, API keys, connection strings, and SAS tokens are not accepted as
     deployment configuration.
 
-### Boolean parsing
+### Mode validation
 
-Accepted boolean values must be documented and normalized consistently.
-Unrecognized values must fail. Empty values must resolve to the documented
-default rather than being treated as truthy.
+Mode values are case-sensitive Bicep parameter values. Values other than
+`new`, `existing`, or `none` must fail parameter validation. Empty or omitted
+environment values resolve to the `none` default.
 
 ### Deployment order
 
@@ -319,7 +324,7 @@ outputs for azd and future application configuration.
 
 The output contract will include, where applicable:
 
-- mode: `disabled`, `deployed`, or `existing`;
+- mode: `none`, `new`, or `existing`;
 - resource ID;
 - resource group;
 - service location;
@@ -327,8 +332,8 @@ The output contract will include, where applicable:
 - project ID and project endpoint for Foundry; and
 - managed identity principal ID when required for RBAC review.
 
-Skipped services emit empty resource and endpoint values with mode
-`disabled`. Credentials, keys, connection strings, tokens, and document
+Skipped services emit empty resource and endpoint values with mode `none`.
+Credentials, keys, connection strings, tokens, and document
 content are never outputs.
 
 No shared JSON object, JSON schema, generated output file, or separate local
@@ -738,7 +743,7 @@ schemas, REST examples, SDK examples, or CI deployment jobs.
 
 `infra/main.bicep` will:
 
-- declare the two deploy booleans and existing-resource parameters;
+- declare the two mode parameters and existing-resource parameters;
 - validate mutually exclusive or incomplete values;
 - call the Foundry and Document Intelligence modules only when their effective
   mode is deploy or existing;
@@ -749,7 +754,7 @@ schemas, REST examples, SDK examples, or CI deployment jobs.
 
 ### No-service behavior
 
-When both booleans are false and no existing resource IDs are supplied:
+When both mode parameters are `none`:
 
 - neither AI module is instantiated;
 - no AI-service resource, role assignment, private endpoint, diagnostic
@@ -765,11 +770,11 @@ The plan must support:
 
 | Foundry | Document Intelligence | Expected behavior |
 | --- | --- | --- |
-| Disabled | Disabled | No-op |
-| New | Disabled | Deploy Foundry only |
-| Existing | Disabled | Validate/reference Foundry only |
-| Disabled | New | Deploy Document Intelligence only |
-| Disabled | Existing | Validate/reference Document Intelligence only |
+| None | None | No-op |
+| New | None | Deploy Foundry only |
+| Existing | None | Validate/reference Foundry only |
+| None | New | Deploy Document Intelligence only |
+| None | Existing | Validate/reference Document Intelligence only |
 | New | New | Deploy both in the same base deployment |
 | Existing | New | Reference Foundry; deploy Document Intelligence |
 | New | Existing | Deploy Foundry; reference Document Intelligence |
@@ -787,7 +792,7 @@ combination.
 - Re-running the same selected configuration should converge.
 - Existing-resource validation should not create state.
 - Resource ownership must not be inferred only from resource names.
-- Ownership comes from the selected deploy/existing mode and the Bicep
+- Ownership comes from the selected `new`/`existing` mode and the Bicep
   deployment/resource graph.
 - A failed combined deployment must identify which AI module and resource
   failed.
@@ -798,10 +803,10 @@ parameters, and resource IDs remain the source of truth.
 
 ## Removal Contract
 
-Each optional AI service will document removal separately for deployed and
-existing modes.
+Each optional AI service will document removal separately for `new` and
+`existing` modes.
 
-### Deployed mode
+### New mode
 
 Removal guidance may delete only:
 
@@ -856,11 +861,11 @@ Repository validation must cover:
 - existing-resource resolution;
 - invalid resource IDs;
 - wrong provider type or account kind;
-- selectors set to false;
-- malformed booleans;
+- selectors set to `none`;
+- unsupported or incorrectly cased mode values;
 - conflicting new and existing values;
 - both AI modules selected together;
-- top-level output selection for disabled, deployed, and existing modes;
+- top-level output selection for `none`, `new`, and `existing` modes;
 - secret-output rejection; and
 - removal ownership classification.
 
@@ -997,7 +1002,7 @@ capacity or service quota.
 
 - No unrelated baseline behavior changes.
 - Invalid configuration fails before Azure mutation.
-- Disabled services without existing-resource references are true no-ops.
+- Services in `none` mode are true no-ops.
 - New and existing resource ownership is unambiguous.
 - Service modules contain no unrelated baseline deployment logic.
 - Local tests pass.
@@ -1095,8 +1100,8 @@ implementation remains prohibited.
 
 1. Add the minimal conditional module calls to `infra/main.bicep`.
 2. Pass environment-backed parameters into both AI modules.
-3. Emit empty, deployed, or referenced outputs consistently.
-4. Test all deploy/existing/disabled combinations without Azure.
+3. Emit `none`, `new`, or `existing` outputs consistently.
+4. Test all `new`/`existing`/`none` combinations without Azure.
 5. Document partial deployment and rerun behavior.
 6. Validate that no-service selection preserves the base resource graph.
 7. Write composition review evidence.

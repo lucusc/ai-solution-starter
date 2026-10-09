@@ -162,8 +162,9 @@ The approved approach adds conditional AI modules under
 `infra/modules/ai/`, with minimal additive parameter, module, and output
 wiring in `infra/main.bicep`. Environment variables select each service and
 either deploy a new resource or reference a compatible pre-existing resource.
-When both services are disabled and no existing-resource information is
-provided, the base resource graph and behavior remain unchanged.
+`USE_FOUNDRY` and `USE_DOCUMENT_INTELLIGENCE` each support `new`, `existing`,
+or `none` and default to `none`. When both use `none`, the base resource graph
+and behavior remain unchanged.
 
 See the
 [detailed Phase 6 implementation plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md).

@@ -256,10 +256,14 @@ gates, and validation requirements are defined in
 - Add only the approved conditional parameters, module calls, and outputs to
   `infra/main.bicep`.
 - Do not modify or refactor existing baseline modules or resource behavior.
-- Select services with explicit environment-variable-backed booleans.
+- Select services with `USE_FOUNDRY` and
+  `USE_DOCUMENT_INTELLIGENCE`, each supporting `new`, `existing`, or `none`
+  and defaulting to `none`.
 - Support deployment of new services or reference to compatible pre-existing
   services.
-- Existing resource information takes precedence over a false deploy boolean.
+- Require compatible existing-resource information when a service mode is
+  `existing`, and reject conflicting resource information in `new` or `none`
+  mode.
 - Define outputs, ownership, and safe removal behavior.
 
 ### 6.2 Add Microsoft Foundry integration
@@ -293,7 +297,7 @@ gates, and validation requirements are defined in
 ### 6.5 Validate conditional base composition
 
 - Add conditional module calls to the base deployment.
-- Test disabled, deploy, and existing-resource combinations without Azure.
+- Test `none`, `new`, and `existing` combinations without Azure.
 - Document quotas, region support, permissions, cost, and removal.
 - Confirm deployments without selected services remain unchanged.
 - Perform live Azure validation only after explicit approval for each

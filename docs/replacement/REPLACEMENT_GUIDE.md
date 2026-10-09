@@ -171,10 +171,11 @@ or another Azure service, use the conditional Phase 6 module strategy:
 1. add a focused module under `infra/modules/ai/`;
 2. add only approved conditional parameters, module calls, and outputs to the
    base Bicep deployment;
-3. preserve existing baseline resource behavior when the module is disabled;
+3. preserve existing baseline resource behavior when the module mode is
+   `none`;
 4. add managed identity and least-privilege RBAC;
 5. add networking and diagnostics;
 6. document region, quota, and cost constraints; and
-7. validate disabled, deployed, and existing-resource modes.
+7. validate `none`, `new`, and `existing` modes.
 
 Do not make opportunistic edits to existing baseline modules or resources.
