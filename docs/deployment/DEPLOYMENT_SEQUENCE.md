@@ -13,8 +13,9 @@
 5. Run the `postprovision` hook:
    - update deployed and local redirect URIs using `BACKEND_URI`
 6. Optionally run `scripts/allow_my_ip_address.sh` for restricted local access.
-7. In later application phases, run `scripts/deploy_app.sh` to deploy backend
-   and Logic App packages.
+7. Build and validate implemented application packages.
+8. **Azure mutation:** run `scripts/deploy_app.sh` only for components whose
+   implementation phase is complete and whose target environment is approved.
 
 ## GitHub Actions deployment
 
@@ -32,8 +33,8 @@ environment.
    - build and push the backend container
    - update the backend Web App image
 
-Application deployment defaults to disabled until later phases provide the
-required packages.
+Application deployment must remain disabled for incomplete packages. The Logic
+App business workflow is not implemented yet.
 
 ## Temporary network access
 
@@ -45,3 +46,13 @@ deployment endpoints and remove it in `always()` cleanup steps.
 Provisioning and deployment steps fail the workflow on errors. Authentication
 setup can be explicitly bypassed through
 `AZURE_BYPASS_AUTHENTICATION_SETUP=true`; it is not silently skipped.
+
+## Cleanup
+
+Resource cleanup is an Azure-mutating operation. Confirm the exact azd
+environment and resource groups before deletion. Follow organization retention
+and soft-delete requirements for Storage, Key Vault-equivalent secrets, and
+other recoverable services. Phase 5 does not execute provisioning or cleanup.
+
+See [deployment configuration](CONFIGURATION.md) and
+[troubleshooting](TROUBLESHOOTING.md).

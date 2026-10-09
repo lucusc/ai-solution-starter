@@ -2,9 +2,9 @@
 
 ## Status
 
-**Planning complete; awaiting approval.** This document defines the proposed
-starter-readiness work. It does not authorize implementation, publication,
-deployment, tagging, release creation, or any Bicep change.
+**Implemented locally; pending review.** The approved starter-readiness work is
+complete in the local unpushed commit stack. No Azure deployment, publication,
+tag, release, repository-setting change, or Bicep change was performed.
 
 Phase 5 implementation may proceed independently of Phase 4 implementation.
 However, Phase 5 must describe the repository truthfully: it must not claim

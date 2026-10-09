@@ -2,28 +2,17 @@ name: Application CI
 
 on:
   pull_request:
-    paths:
-      - "app/backend/**"
-      - "app/frontend/**"
-      - "pyproject.toml"
-      - "scripts/smoke_backend_azure.py"
-      - ".github/workflows/backend-ci.yml"
   push:
     branches:
       - main
-    paths:
-      - "app/backend/**"
-      - "app/frontend/**"
-      - "pyproject.toml"
-      - "scripts/smoke_backend_azure.py"
-      - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  validate:
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,25 +27,6 @@ jobs:
             app/backend/requirements.txt
             app/backend/requirements-dev.txt
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: app/frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: app/frontend
-        run: npm ci
-
-      - name: Validate frontend
-        working-directory: app/frontend
-        run: |
-          npm run lint
-          npm run typecheck
-          npm test -- --run
-          npm run build
-
       - name: Install dependencies
         run: python -m pip install -r app/backend/requirements-dev.txt
 
@@ -65,14 +35,109 @@ jobs:
 
       - name: Run lint
         run: |
-          python -m ruff check app/backend scripts/smoke_backend_azure.py
-          python -m ruff format --check app/backend scripts/smoke_backend_azure.py
+          python -m ruff check \
+            app/backend \
+            scripts/generate_sample_pdf.py \
+            scripts/smoke_backend_azure.py \
+            scripts/validate_repository.py
+          python -m ruff format --check \
+            app/backend \
+            scripts/generate_sample_pdf.py \
+            scripts/smoke_backend_azure.py \
+            scripts/validate_repository.py
 
       - name: Run type checks
         run: python -m mypy app/backend/backend
 
-      - name: Build container
-        run: docker build -f app/backend/Dockerfile app/backend
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Verify infrastructure baseline
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app/frontend
+        run: npm ci
+
+      - name: Run lint
+        working-directory: app/frontend
+        run: npm run lint
+
+      - name: Run type checks
+        working-directory: app/frontend
+        run: npm run typecheck
+
+      - name: Run tests
+        working-directory: app/frontend
+        run: npm test -- --run
+
+      - name: Build
+        working-directory: app/frontend
+        run: npm run build
+
+      - name: Verify generated assets are untracked
+        run: |
+          test -f app/backend/static/index.html
+          test -z "$(git status --short --untracked-files=all app/backend/static)"
+
+  container:
+    name: Production container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: app/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build container
+        run: docker build -f app/backend/Dockerfile -t ai-solution-starter:ci app/backend
+
+      - name: Probe container
+        run: ./scripts/probe_container.sh ai-solution-starter:ci
+
+  repository:
+    name: Repository policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate documentation and tracked artifacts
+        run: python scripts/validate_repository.py
+
+      - name: Generate deterministic sample
+        run: |
+          python scripts/generate_sample_pdf.py "${RUNNER_TEMP}/hello-world.pdf"
+          test -s "${RUNNER_TEMP}/hello-world.pdf"
+
+      - name: Verify Bicep baseline
         run: ./scripts/verify_bicep_baseline.sh
+
+      - name: Check diff whitespace
+        run: git diff --check

@@ -19,6 +19,8 @@ coverage/
 
 # Generated application assets
 app/backend/static/
+tests/sample-data/generated/*
+!tests/sample-data/generated/.gitkeep
 
 # Azure Developer CLI
 .azure/
