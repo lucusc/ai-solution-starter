@@ -37,6 +37,7 @@ PYTHONPATH=app/backend .venv/bin/hypercorn \
 .venv/bin/python -m ruff check app/backend scripts/smoke_backend_azure.py
 .venv/bin/python -m ruff format --check app/backend scripts/smoke_backend_azure.py
 .venv/bin/python -m mypy app/backend/backend
+cd app/frontend && npm ci && npm run build && cd ../..
 docker build -f app/backend/Dockerfile app/backend
 ./scripts/verify_bicep_baseline.sh
 ```

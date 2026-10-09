@@ -211,7 +211,7 @@ jobs:
         if: ${{ github.event.inputs.deploy-application == 'true' }}
         run: |
           pushd "${{ env.FRONTEND_WORKING_DIR }}" || exit
-          npm install
+          npm ci
           npm run build
           popd || exit
 

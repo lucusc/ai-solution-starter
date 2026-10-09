@@ -110,7 +110,7 @@ The summary below remains the high-level backlog.
 
 ## Phase 3 - Frontend Hello-World Application
 
-**Status:** Detailed planning complete and awaiting approval.
+**Status:** Implemented locally and pending the Phase 3 review gate.
 
 The implementation-ready frontend, API-integration, static-hosting, testing,
 replacement-boundary, and review contracts are defined in

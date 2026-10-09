@@ -2,12 +2,9 @@
 
 ## Status
 
-**Planning only.** Phase 3 frontend code has not been implemented.
-
-Implementation must not begin until this plan is explicitly approved. Phase 2
-remains in an unpushed local commit, so Phase 3 planning and any later
-implementation must also remain local until the applicable review gates allow
-the commit stack to be pushed.
+**Implemented locally; pending review.** Phase 3 is complete in the local
+unpushed commit stack. Phase 4 must not begin and the implementation must not
+be pushed until the applicable review gates are explicitly approved.
 
 ## Objective
 

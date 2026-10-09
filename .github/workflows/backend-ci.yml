@@ -1,9 +1,10 @@
-name: Backend CI
+name: Application CI
 
 on:
   pull_request:
     paths:
       - "app/backend/**"
+      - "app/frontend/**"
       - "pyproject.toml"
       - "scripts/smoke_backend_azure.py"
       - ".github/workflows/backend-ci.yml"
@@ -12,6 +13,7 @@ on:
       - main
     paths:
       - "app/backend/**"
+      - "app/frontend/**"
       - "pyproject.toml"
       - "scripts/smoke_backend_azure.py"
       - ".github/workflows/backend-ci.yml"
@@ -35,6 +37,25 @@ jobs:
           cache-dependency-path: |
             app/backend/requirements.txt
             app/backend/requirements-dev.txt
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: app/frontend
+        run: npm ci
+
+      - name: Validate frontend
+        working-directory: app/frontend
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test -- --run
+          npm run build
 
       - name: Install dependencies
         run: python -m pip install -r app/backend/requirements-dev.txt

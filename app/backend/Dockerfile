@@ -10,6 +10,7 @@ RUN python -m pip install --no-cache-dir --disable-pip-version-check -r requirem
 
 COPY hypercorn.toml .
 COPY backend ./backend
+COPY static ./static
 
 EXPOSE 8000
 

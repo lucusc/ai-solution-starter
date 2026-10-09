@@ -4,9 +4,10 @@ import logging
 import re
 import time
 import uuid
+from pathlib import Path
 from typing import Any
 
-from quart import Quart, Response, g, jsonify, request
+from quart import Quart, Response, abort, g, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from .auth import authenticate_request
@@ -46,12 +47,14 @@ def _error_payload(error: AppError) -> dict[str, Any]:
 def create_app(
     settings: Settings | None = None,
     dependencies: AppDependencies | None = None,
+    static_directory: Path | None = None,
 ) -> Quart:
     resolved_settings = settings or Settings.from_environment()
     resolved_dependencies = dependencies or build_dependencies(resolved_settings)
 
     configure_logging(resolved_settings.log_level)
-    app = Quart(__name__)
+    app = Quart(__name__, static_folder=None)
+    resolved_static_directory = static_directory or Path(__file__).resolve().parents[1] / "static"
     app.config["MAX_CONTENT_LENGTH"] = resolved_settings.max_pdf_size_bytes + (1024 * 1024)
     app.extensions["settings"] = resolved_settings
     app.extensions["dependencies"] = resolved_dependencies
@@ -127,5 +130,28 @@ def create_app(
 
     app.register_blueprint(health_blueprint)
     app.register_blueprint(work_items_blueprint)
+
+    @app.get("/")
+    @app.get("/<path:path>")
+    async def serve_frontend(path: str = "") -> Response:
+        if path.startswith(("api/", ".auth/")) or path in {"healthz", "readyz"}:
+            abort(404)
+
+        if path:
+            candidate = (resolved_static_directory / path).resolve()
+            try:
+                candidate.relative_to(resolved_static_directory.resolve())
+            except ValueError:
+                abort(404)
+            if candidate.is_file():
+                return await send_from_directory(resolved_static_directory, path)
+            if path.startswith("assets/") or "." in Path(path).name:
+                abort(404)
+
+        index = resolved_static_directory / "index.html"
+        if not index.is_file():
+            abort(404)
+        return await send_from_directory(resolved_static_directory, "index.html")
+
     configure_telemetry(app, resolved_settings)
     return app

@@ -5,8 +5,9 @@ AI-enabled solutions on Azure. It will provide a replaceable hello-world
 application that demonstrates a web frontend, backend API, data persistence,
 workflow automation, observability, and Azure AI integration.
 
-The repository currently contains the reviewed infrastructure and deployment
-baseline. Application implementation will be delivered in later phases.
+The repository contains the reviewed infrastructure and deployment baseline,
+the generic Quart backend, and the React hello-world frontend. The Logic App
+business workflow and Azure AI processing behavior remain later-phase work.
 
 ## Planned Solution Shape
 
@@ -26,15 +27,16 @@ baseline. Application implementation will be delivered in later phases.
 
 ## Current Status
 
-Phase 1 establishes the Azure infrastructure, Azure Developer CLI hooks,
-deployment scripts, and GitHub Actions. The backend, frontend, and Logic App
-business workflow remain placeholders for later phases.
+Phase 3 adds the replaceable frontend flow for authenticated PDF submission,
+owner-scoped work-item lists, routed details, lifecycle polling, and safe AI
+result presentation. Phase 4 will implement the Logic App business workflow.
 
 See:
 
 - [Implementation plan](docs/PLAN.md)
 - [Phase task backlog](docs/PHASE_TASKS.md)
 - [Source sanitization policy](docs/SOURCE_SANITIZATION.md)
+- [Phase 3 implementation plan](docs/phases/PHASE_3_IMPLEMENTATION_PLAN.md)
 - [Infrastructure resource contract](docs/infrastructure/RESOURCE_CONTRACT.md)
 - [Deployment sequence](docs/deployment/DEPLOYMENT_SEQUENCE.md)
 
