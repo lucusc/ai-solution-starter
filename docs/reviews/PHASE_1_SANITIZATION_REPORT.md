@@ -58,12 +58,27 @@ database records, or generated assets were introduced.
 - IP addresses are limited to generic private network defaults, Azure portal
   middleware access, and the Azure Cosmos DB service bypass value.
 
-## Deployment validation decision
+## Deployment validation
 
-No Azure resources were provisioned during Phase 1. The repository is ready
-for either:
+A temporary clean environment was provisioned in Sweden Central with the full
+private-network defaults and authentication app-registration setup bypassed.
 
-1. a dedicated clean-environment infrastructure deployment now, or
-2. deferred provisioning when the application vertical slice is available.
+The deployment successfully created or validated:
 
-This decision remains at the Phase 1 review gate.
+- the isolated resource group
+- primary and Logic App Storage accounts
+- Premium Azure Container Registry
+- Azure OpenAI and the chat, embedding, and vision deployments
+- Log Analytics and Application Insights
+- the monitoring dashboard
+- Azure Cosmos DB
+- the backend App Service plan on the retry
+
+The Logic Apps Standard plan could not be allocated because Azure reported no
+available regional instances. An idempotent retry produced the same regional
+capacity response. This was accepted as an external capacity result rather
+than a template defect; no infrastructure changes were made to work around it.
+
+The complete temporary resource group was then deleted. The Log Analytics
+workspace and Azure OpenAI account were purged, and Azure Developer CLI
+reported successful removal of the application resources.
