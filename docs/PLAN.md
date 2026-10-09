@@ -158,11 +158,12 @@ Intelligence capabilities through additive infrastructure. Plan Azure AI
 Search as a future extension without implementing Search resources or
 examples in this phase.
 
-The approved approach uses independent extension Bicep entry points and
-scripts outside the protected `infra/` baseline. Environment variables select
-each extension and either deploy a new service or reference a compatible
-pre-existing service. A wrapper composes selected extensions without changing
-the base `azd provision` path.
+The approved approach adds conditional AI modules under
+`infra/modules/ai/`, with minimal additive parameter, module, and output
+wiring in `infra/main.bicep`. Environment variables select each service and
+either deploy a new resource or reference a compatible pre-existing resource.
+When both services are disabled and no existing-resource information is
+provided, the base resource graph and behavior remain unchanged.
 
 See the
 [detailed Phase 6 implementation plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md).

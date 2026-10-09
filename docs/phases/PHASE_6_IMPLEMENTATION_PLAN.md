@@ -2,11 +2,11 @@
 
 ## Status
 
-**Planning complete; awaiting approval.** This document defines the proposed
-optional Microsoft Foundry and Azure AI Document Intelligence extensions, the
-deployment-selection contract, and the deferred Azure AI Search design. It
-does not authorize implementation, Azure deployment, a push, or any change to
-the established Bicep baseline.
+**Planning revision required; awaiting approval.** This document defines the
+proposed conditional Microsoft Foundry and Azure AI Document Intelligence
+modules, the deployment-selection contract, and the deferred Azure AI Search
+design. It does not authorize implementation, Azure deployment, a push, or
+any infrastructure change.
 
 Phase 6 implementation must begin only after this plan is explicitly approved.
 Each implemented extension must then stop at its own review gate before the
@@ -14,57 +14,62 @@ next extension or composition work begins.
 
 ## Objective
 
-Extend the starter with independently optional Azure AI capabilities without
-changing the base deployment:
+Extend the starter's base infrastructure with conditionally optional Azure AI
+capabilities while preserving the existing resource graph and behavior when
+the new capabilities are not selected:
 
 1. add a Microsoft Foundry account and project extension;
 2. add an Azure AI Document Intelligence extension;
 3. allow either extension to deploy a new service or reference a compatible
    pre-existing service;
-4. select extensions through deployment environment variables;
-5. provide a wrapper that composes selected extensions while retaining
-   independent deployment entry points;
+4. select each service through base-infrastructure parameters sourced from
+   deployment environment variables;
+5. place service modules under `infra/modules/ai/` and invoke them
+   conditionally from `infra/main.bicep`;
 6. document managed-identity usage through REST and SDK command examples;
 7. plan, but do not implement, Azure AI Search in this phase; and
-8. prove that a deployment with no selected extensions remains identical to
-   the current base deployment.
+8. prove that a deployment with no selected services preserves the current
+   base resource graph and behavior.
 
-The extensions are infrastructure and operational examples. Phase 6 will not
-integrate them into the base backend, frontend, Logic App, or work-item data
-model.
+The new services are part of the base infrastructure install, but remain
+disabled by default. Phase 6 will not integrate them into the base backend,
+frontend, Logic App, or work-item data model.
 
 ## Non-Negotiable Infrastructure Rule
 
-The established Bicep baseline is immutable.
+The established Bicep resource graph and behavior remain protected. Phase 6
+has explicit approval to add only the conditional AI-service wiring required
+by this plan:
 
-Phase 6 must not modify, optimize, reorganize, simplify, reformat, rename,
-upgrade, or otherwise edit:
+- new service modules under `infra/modules/ai/`;
+- new optional parameters in `infra/main.bicep`;
+- conditional module invocations in `infra/main.bicep`;
+- outputs for deployed or referenced service resources; and
+- corresponding parameter and documentation entries.
 
-- `infra/main.bicep`;
-- any existing file under `infra/modules/`;
-- `infra/main.parameters.json`;
-- `infra/azure_roles.json`; or
-- `infra/bicep-baseline.sha256`.
+The existing baseline modules, resource definitions, identities, networking,
+RBAC, diagnostics, and application settings must not be optimized,
+reorganized, simplified, reformatted, renamed, upgraded, or behaviorally
+changed. The implementation must not duplicate or replace the baseline.
 
-The checksum manifest must continue to pass without an update. Optional
-services must be implemented outside the protected baseline through new,
-additive entry points.
+Because `infra/main.bicep` is currently covered by the checksum manifest, the
+approved Phase 6 additive change must update the manifest only after the exact
+diff is reviewed, the no-service resource graph is compared with the
+pre-Phase-6 graph, and `az bicep build` passes. The manifest update itself
+requires explicit approval.
 
-If any extension requires a baseline Bicep change, implementation must stop
-and return for a separate design decision. The extension must not work around
-the rule by patching generated templates, changing the base deployment from a
-script, or introducing a second copy of the baseline.
+Any change outside the additive scope above is a stop condition.
 
 ## Approved Decisions
 
 | Decision | Phase 6 direction |
 | --- | --- |
-| Base infrastructure | Preserve every existing Bicep byte and deployment behavior |
-| Extension selection | Optional deployment environment variables |
+| Base infrastructure | Preserve existing resource graph and behavior; add only approved conditional AI wiring |
+| Extension selection | Optional base-infrastructure parameters sourced from deployment environment variables |
 | New versus existing services | Support deployment of new services and reference to approved pre-existing services |
 | Enablement shape | Per-extension deploy boolean plus optional existing-resource variables |
-| Deployment integration | Separate extension-specific scripts and Bicep entry points |
-| Composition | Add a selector wrapper that invokes selected independent extensions |
+| Deployment integration | Conditional modules under `infra/modules/ai/` invoked by `infra/main.bicep` |
+| Composition | One base deployment selects zero, one, or both services |
 | Networking | Mirror applicable baseline public, restricted-public, generated-private, existing-VNet, existing-DNS, and externally managed DNS modes |
 | Foundry scope | Foundry account/project, managed-identity model connection, and documentation-only SDK/REST usage commands |
 | Foundry parent | Support a new compatible `AIServices` account or an approved existing compatible account |
@@ -81,11 +86,10 @@ script, or introducing a second copy of the baseline.
 
 ### Included
 
-- additive extension directory and naming conventions;
-- independent Foundry and Document Intelligence Bicep entry points;
-- extension-specific parameter files;
-- extension-specific deploy, validate, show, and remove guidance;
-- a selector wrapper driven by environment values;
+- additive `infra/modules/ai/` module boundaries;
+- conditional Foundry and Document Intelligence module calls from the base
+  template;
+- base parameter and environment-variable entries;
 - deterministic deploy-or-reference-existing resolution;
 - resource-ID validation before Azure changes;
 - extension outputs suitable for documentation and future application wiring;
@@ -110,10 +114,11 @@ script, or introducing a second copy of the baseline.
 
 ### Excluded
 
-- any edit under the protected baseline listed above;
-- automatic execution from the base `azd provision` path;
-- modifications to `azure.yaml` unless separately approved after the extension
-  scripts have proven insufficient;
+- optimization or behavioral changes to the existing baseline modules;
+- automatic deployment of either new AI service when its selector is false and
+  no existing-resource reference is supplied;
+- modifications to `azure.yaml` unless separately required by the base
+  parameter contract;
 - changes to base infrastructure outputs or application settings;
 - changes to backend or frontend dependency manifests;
 - backend routes, frontend pages, or feature flags;
@@ -160,9 +165,9 @@ The Document Intelligence increment is complete when its additive templates,
 scripts, documentation, and local validation pass. A live deployment is
 additional evidence only when separately approved.
 
-### Composition complete
+### Conditional composition complete
 
-Composition is complete when the selector wrapper can:
+Conditional composition is complete when the base Bicep deployment can:
 
 - select neither extension without changing Azure;
 - select Foundry only;
@@ -179,64 +184,33 @@ artifact is expected.
 
 ## Proposed Repository Layout
 
-New files must remain outside `infra/`:
-
 ```text
-extensions/
-├── README.md
-├── common/
-│   ├── README.md
-│   ├── contracts/
-│   │   └── extension-output.schema.json
-│   └── scripts/
-│       ├── validate_environment.py
-│       └── write_outputs.py
-├── foundry/
-│   ├── README.md
-│   ├── infra/
-│   │   ├── main.bicep
-│   │   ├── main.parameters.json
-│   │   └── modules/
-│   ├── scripts/
-│   │   ├── deploy.sh
-│   │   ├── validate.sh
-│   │   └── show.sh
-│   └── docs/
-│       ├── CONFIGURATION.md
-│       ├── USAGE.md
-│       ├── TROUBLESHOOTING.md
-│       └── REMOVAL.md
-├── document-intelligence/
-│   ├── README.md
-│   ├── infra/
-│   │   ├── main.bicep
-│   │   ├── main.parameters.json
-│   │   └── modules/
-│   ├── scripts/
-│   │   ├── deploy.sh
-│   │   ├── validate.sh
-│   │   └── show.sh
-│   └── docs/
-│       ├── CONFIGURATION.md
-│       ├── USAGE.md
-│       ├── TROUBLESHOOTING.md
-│       └── REMOVAL.md
-└── ai-search/
-    ├── README.md
-    └── FUTURE_IMPLEMENTATION_PLAN.md
+infra/
+├── main.bicep                         # Existing template plus approved conditional wiring
+├── main.parameters.json               # Existing parameter file plus approved defaults
+└── modules/
+    └── ai/
+        ├── foundry.bicep
+        ├── document-intelligence.bicep
+        └── README.md
 
-scripts/
-├── deploy_extensions.sh
-└── validate_extensions.sh
+docs/
+└── infrastructure/
+    └── AI_SERVICES.md
 ```
 
-Exact helper names may follow repository conventions during implementation,
-but the ownership boundaries must remain:
+The existing deployment scripts remain the entry point. Exact module names may
+follow repository conventions during implementation, but the ownership
+boundaries must remain:
 
-- each service extension owns its infrastructure and documentation;
-- shared helpers validate contracts without containing service resources;
-- the root selector invokes independent entry points;
-- no extension imports or modifies the base Bicep template.
+- each service module owns only its service resources and service-specific
+  outputs;
+- `infra/main.bicep` owns selection, parameter plumbing, module conditions,
+  and top-level outputs;
+- the existing baseline modules remain untouched;
+- no service module changes unrelated baseline resources; and
+- the normal `azd provision` path installs selected services atomically with
+  the base deployment.
 
 PowerShell parity is not automatically required for Phase 6. If the existing
 deployment support matrix requires Windows-native extension scripts,
@@ -245,24 +219,25 @@ or stop for a scope decision.
 
 ## Deployment and Enablement Contract
 
-### Selection variables
+### Selection parameters and environment variables
 
-The selector wrapper will use explicit booleans:
+The base Bicep deployment will use explicit booleans populated by the
+deployment environment:
 
 | Environment value | Default | Meaning |
 | --- | --- | --- |
-| `DEPLOY_FOUNDRY_EXTENSION` | `false` | Select the Foundry extension |
-| `DEPLOY_DOCUMENT_INTELLIGENCE_EXTENSION` | `false` | Select the Document Intelligence extension |
+| `DEPLOY_FOUNDRY` | `false` | Create or enable Foundry resources when no existing resource ID is supplied |
+| `DEPLOY_DOCUMENT_INTELLIGENCE` | `false` | Create or enable Document Intelligence when no existing resource ID is supplied |
 
 Azure AI Search has no deployment selector in Phase 6 because its
 implementation is deferred.
 
-The word `DEPLOY` indicates that the extension deployment path is selected. It
-does not necessarily mean a new service is created. When a complete,
-compatible existing-resource reference is supplied, the selected extension
-uses that resource and deploys only extension-owned child resources, role
-assignments, connections, diagnostics, or private endpoints that are both
-approved and required.
+The word `DEPLOY` enables creation when no existing resource reference is
+supplied. An existing resource reference always takes precedence, even when
+the corresponding deploy boolean is `false`; the module validates and
+references that resource instead of creating a duplicate. If the boolean is
+false and no existing resource information is supplied, the service is
+skipped.
 
 ### Foundry existing-resource variables
 
@@ -271,7 +246,7 @@ The exact names must remain environment-oriented and secret-free:
 | Environment value | Required when supplied | Purpose |
 | --- | --- | --- |
 | `FOUNDRY_ACCOUNT_RESOURCE_ID` | Existing-account mode | Full resource ID of a compatible `AIServices` account |
-| `FOUNDRY_PROJECT_NAME` | Always when selected | Project name to create or resolve |
+| `FOUNDRY_PROJECT_NAME` | Deploy or existing-project mode | Project name to create or resolve |
 | `FOUNDRY_PROJECT_RESOURCE_ID` | Optional existing-project mode | Full resource ID of an existing project |
 | `FOUNDRY_LOCATION` | New-account mode | Deployment location |
 | `FOUNDRY_ACCOUNT_NAME` | New-account mode | Account name or deterministic naming seed |
@@ -298,10 +273,10 @@ the base outputs or parameter file.
 The selector and extension scripts must implement these rules before
 deployment:
 
-1. An extension with a false selector is skipped even if stale extension
-   variables are present.
-2. A selected extension with a full existing resource ID enters reuse mode.
-3. A selected extension without a full existing resource ID enters new-resource
+1. A full existing resource ID enters reuse mode even when its deploy boolean
+   is false.
+2. A false deploy boolean with no existing resource ID skips the service.
+3. A true deploy boolean with no existing resource ID enters new-resource
    mode.
 4. A supplied existing project ID takes precedence over creating a Foundry
    project, after compatibility validation.
@@ -769,37 +744,32 @@ Phase 6 will add only:
 It will not add Search Bicep, scripts, package dependencies, schemas, REST
 examples, SDK examples, or CI deployment jobs.
 
-## Selector Wrapper
+## Conditional Base Deployment
 
 ### Responsibilities
 
-`scripts/deploy_extensions.sh` will be an orchestrator, not an infrastructure
-implementation. It will:
+`infra/main.bicep` will:
 
-- read extension selectors;
-- validate all selected inputs together;
-- detect contradictory values;
-- invoke each independent extension script;
-- stop on the first failed extension;
-- preserve already completed extension outputs for troubleshooting;
-- avoid rollback that could delete shared or existing resources;
-- combine normalized outputs;
-- state which resources were created and referenced; and
-- print exact next-step documentation links.
+- declare the two deploy booleans and existing-resource parameters;
+- validate mutually exclusive or incomplete values;
+- call the Foundry and Document Intelligence modules only when their effective
+  mode is deploy or existing;
+- pass resource group, location, networking, identity, RBAC, and diagnostics
+  choices through explicit parameters;
+- emit empty outputs when a service is skipped; and
+- emit resource IDs and endpoints when a service is deployed or referenced.
 
-### No-extension behavior
+### No-service behavior
 
-When both selectors are false, the wrapper must:
+When both booleans are false and no existing resource IDs are supplied:
 
-- validate boolean syntax;
-- report that no extensions were selected;
-- make no Azure control-plane or data-plane mutation;
-- not run the base deployment;
-- not create an output file unless explicitly requested; and
-- exit successfully.
+- neither AI module is instantiated;
+- no AI-service resource, role assignment, private endpoint, diagnostic
+  setting, or project connection is created;
+- all existing baseline resources are deployed exactly as before; and
+- the pre-Phase-6 and post-Phase-6 resource graphs must match.
 
-This is the primary compatibility proof that Phase 6 does not alter default
-base deployments.
+This is the primary compatibility proof for the conditional base deployment.
 
 ### Mixed-mode examples
 
@@ -877,20 +847,20 @@ resolved resource IDs before deletion.
 
 ### Local validation required for every increment
 
-- compile each new Bicep entry point;
+- compile `infra/main.bicep` and each new AI module;
 - lint or format new scripts using existing repository tooling where
   applicable;
 - validate parameter-file syntax;
 - validate selector and resolution rules without Azure mutation;
 - test output-schema validation;
-- test no-extension no-op behavior;
+- test no-service no-op behavior;
 - test contradictory and partial environment values;
 - test generated files are ignored;
 - validate documentation links;
 - run repository source-sanitization checks;
 - run `git diff --check`;
-- run `./scripts/verify_bicep_baseline.sh`; and
-- verify no protected baseline file changed.
+- run `./scripts/verify_bicep_baseline.sh` against the approved manifest; and
+- verify no unrelated baseline module or resource behavior changed.
 
 ### Mocked script tests
 
@@ -917,11 +887,11 @@ Each extension template must:
 
 - compile independently;
 - have an explicit target scope;
-- avoid references to protected baseline modules;
+- avoid changes to protected baseline modules;
 - expose documented outputs;
 - pass repository naming and source-policy checks;
 - support a what-if command when Azure validation is approved; and
-- remain absent from the base `azd provision` graph.
+- remain conditionally absent from the base resource graph when not selected.
 
 ### Live-Azure validation
 
@@ -1027,25 +997,24 @@ Documentation will identify, without fixed prices:
 The implementation must not claim that a compiled template proves regional
 capacity or service quota.
 
-## Work Package 6.0 - Additive Extension Contract
+## Work Package 6.0 - Conditional Base Infrastructure Contract
 
 ### Tasks
 
-1. Create the extension directory boundaries.
-2. Define selectors, existing-resource variables, validation rules, and
-   normalized outputs.
-3. Implement shared environment and output validation.
-4. Add baseline-integrity guards.
-5. Add no-extension no-op tests.
+1. Define the new base parameters and environment-variable mappings.
+2. Define the `infra/modules/ai/` ownership boundaries.
+3. Define existing-resource precedence and validation rules.
+4. Define module outputs and top-level base outputs.
+5. Add no-service resource-graph comparison tests.
 6. Document naming, ownership, and removal semantics.
 
 ### Acceptance criteria
 
-- No protected baseline file changes.
+- No unrelated baseline behavior changes.
 - Invalid configuration fails before Azure mutation.
-- Disabled extensions are true no-ops.
+- Disabled services without existing-resource references are true no-ops.
 - New and existing resource ownership is unambiguous.
-- Shared contracts contain no service deployment logic.
+- Service modules contain no unrelated baseline deployment logic.
 - Local tests pass.
 
 ### Review gate
@@ -1056,7 +1025,7 @@ Pause before implementing a service extension.
 
 ### Tasks
 
-1. Add the independent Foundry Bicep entry point.
+1. Add the Foundry module under `infra/modules/ai/`.
 2. Add new-account, existing-account, and existing-project resolution.
 3. Add project creation where selected.
 4. Add managed identity and least-privilege RBAC.
@@ -1087,7 +1056,7 @@ implementation.
 
 ### Tasks
 
-1. Add the independent Document Intelligence Bicep entry point.
+1. Add the Document Intelligence module under `infra/modules/ai/`.
 2. Add new-resource and existing-resource resolution.
 3. Add managed identity and least-privilege RBAC.
 4. Add approved networking and diagnostics modes.
@@ -1133,16 +1102,16 @@ Pause after the Document Intelligence increment.
 Search planning may be reviewed with either service increment, but Search
 implementation remains prohibited.
 
-## Work Package 6.4 - Selector and Composition
+## Work Package 6.4 - Conditional Base Composition
 
 ### Tasks
 
-1. Add the selector wrapper.
-2. Invoke each extension only through its independent entry point.
-3. Merge normalized outputs.
+1. Add the minimal conditional module calls to `infra/main.bicep`.
+2. Pass environment-backed parameters into both AI modules.
+3. Emit empty, deployed, or referenced outputs consistently.
 4. Test all deploy/existing/disabled combinations without Azure.
-5. Document partial failure and rerun behavior.
-6. Validate that no-selection is a successful no-op.
+5. Document partial deployment and rerun behavior.
+6. Validate that no-service selection preserves the base resource graph.
 7. Write composition review evidence.
 
 ### Acceptance criteria
@@ -1151,7 +1120,7 @@ implementation remains prohibited.
 - Neither extension depends on the other.
 - Existing resources are never misclassified as created.
 - Partial failure is explicit and recoverable.
-- The wrapper never invokes or changes base infrastructure.
+- Conditional AI modules never change unrelated base infrastructure.
 - Local composition tests pass.
 
 ### Review gate
@@ -1228,10 +1197,13 @@ dependency.
 - Each selected extension supports new-resource and compatible
   existing-resource modes.
 - Environment selection is explicit and validated.
-- A selector wrapper supports approved combinations.
-- No selected extensions is a successful no-op.
-- Base `azd provision` behavior is unchanged.
-- The protected Bicep checksum passes without update.
+- Conditional module calls support approved combinations within the base
+  `azd provision` deployment.
+- No selected services is a successful no-op for the new modules.
+- Base resource behavior and graph are unchanged when no new services are
+  selected.
+- The approved Bicep checksum and manifest policy pass after any reviewed
+  additive wiring change.
 - Managed identity and least-privilege RBAC are the production contract.
 - Applicable baseline networking choices are represented without changing the
   base network.
@@ -1249,8 +1221,9 @@ dependency.
 
 Stop and request review if:
 
-- any implementation appears to require a protected baseline edit;
-- an extension must be invoked from base `azd provision` to function;
+- any implementation exceeds the approved additive `infra/modules/ai/` and
+  `infra/main.bicep` wiring scope;
+- an existing baseline module or resource behavior must be changed;
 - current Foundry resources cannot be deployed without Standard Agent Setup,
   capability hosts, or stores;
 - an existing Azure OpenAI connection requires a key or base-resource
@@ -1270,5 +1243,5 @@ Stop and request review if:
 - cleanup could delete a shared or referenced resource;
 - source content, extracted content, identifiers, endpoints, or credentials
   would enter Git or published logs;
-- local validation cannot prove no-extension no-op behavior; or
+- local validation cannot prove no-service no-op behavior; or
 - proprietary content or source history is detected.

@@ -243,21 +243,24 @@ in [Phase 5 Implementation Plan](phases/PHASE_5_IMPLEMENTATION_PLAN.md).
 
 ## Phase 6 - Optional Azure AI Extensions
 
-**Status:** Detailed implementation planning complete and awaiting approval.
+**Status:** Phase 6 planning revised and awaiting approval.
 
-The additive deployment contract, approved service scope, environment-variable
-selection behavior, independent review gates, and validation requirements are
-defined in
+The conditional base-infrastructure contract, approved service scope,
+environment-variable selection behavior, module boundaries, independent review
+gates, and validation requirements are defined in
 [Phase 6 Implementation Plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md).
 
-### 6.1 Approve an additive infrastructure strategy
+### 6.1 Approve the conditional base-infrastructure strategy
 
-- Add independent extension Bicep entry points and scripts outside `infra/`.
-- Do not modify or refactor the base infrastructure baseline.
-- Select extensions with explicit environment-variable booleans.
+- Add Foundry and Document Intelligence modules under `infra/modules/ai/`.
+- Add only the approved conditional parameters, module calls, and outputs to
+  `infra/main.bicep`.
+- Do not modify or refactor existing baseline modules or resource behavior.
+- Select services with explicit environment-variable-backed booleans.
 - Support deployment of new services or reference to compatible pre-existing
   services.
-- Define normalized outputs, ownership, and safe removal behavior.
+- Existing resource information takes precedence over a false deploy boolean.
+- Define outputs, ownership, and safe removal behavior.
 
 ### 6.2 Add Microsoft Foundry integration
 
@@ -287,19 +290,18 @@ defined in
   guidance.
 - Do not add custom-model training or base application integration.
 
-### 6.5 Validate independent composition
+### 6.5 Validate conditional base composition
 
-- Add a selector wrapper that invokes the independent Foundry and Document
-  Intelligence entry points.
+- Add conditional module calls to the base deployment.
 - Test disabled, deploy, and existing-resource combinations without Azure.
 - Document quotas, region support, permissions, cost, and removal.
-- Confirm deployments without extensions remain unchanged.
+- Confirm deployments without selected services remain unchanged.
 - Perform live Azure validation only after explicit approval for each
   increment.
 
 ### Phase 6 review gate
 
-- Review the extension contract, Foundry, Document Intelligence, composition,
+- Review the base module contract, Foundry, Document Intelligence, composition,
   and any approved live validation independently.
 - Keep Azure AI Search implementation deferred.
 - Do not push or release without separate approval.
