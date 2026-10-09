@@ -166,14 +166,15 @@ Do not copy prompts or criteria from a private solution.
 ## Adding Azure services
 
 If the new solution needs Foundry projects, AI Search, Document Intelligence,
-or another Azure service, use the additive Phase 6 strategy:
+or another Azure service, use the conditional Phase 6 module strategy:
 
-1. define an optional infrastructure entry point;
-2. preserve the baseline deployment unchanged;
-3. define outputs and application settings;
+1. add a focused module under `infra/modules/ai/`;
+2. add only approved conditional parameters, module calls, and outputs to the
+   base Bicep deployment;
+3. preserve existing baseline resource behavior when the module is disabled;
 4. add managed identity and least-privilege RBAC;
 5. add networking and diagnostics;
 6. document region, quota, and cost constraints; and
-7. validate the extension alone and with the base solution.
+7. validate disabled, deployed, and existing-resource modes.
 
-Do not make opportunistic edits under `infra/`.
+Do not make opportunistic edits to existing baseline modules or resources.

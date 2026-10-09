@@ -319,7 +319,7 @@ Clearly distinguish:
 - deployment automation;
 - operational configuration;
 - generated artifacts; and
-- optional future extensions.
+- optional future Azure services.
 
 ## Prerequisite Contract
 
@@ -672,7 +672,7 @@ consumers.
 If a downstream solution requires new Azure services:
 
 - do not edit the baseline opportunistically;
-- follow the approved additive-extension strategy from Phase 6;
+- follow the approved conditional-module strategy from Phase 6;
 - define new outputs and application settings;
 - document RBAC, networking, diagnostics, region support, quotas, and costs;
   and
@@ -1038,7 +1038,7 @@ task before any push.
 4. Document prompt and workflow replacement.
 5. Document backend and frontend replacement.
 6. Document test and fixture updates.
-7. Document infrastructure escalation and Phase 6 extensions.
+7. Document infrastructure escalation and Phase 6 optional AI modules.
 
 ### Acceptance criteria
 

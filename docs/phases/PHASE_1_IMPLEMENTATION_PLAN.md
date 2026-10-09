@@ -62,7 +62,7 @@ Phase 1 does not include:
    private context.
 8. Once the sanitized infrastructure baseline is approved, its Bicep files
    become immutable except for separately approved bug fixes or additive
-   extensions.
+   conditional modules.
 9. No source data, prompts, PDFs, images, generated application assets, or
    database records are allowed in Phase 1.
 10. Every commit must contain only reviewed, generalized content.

@@ -151,11 +151,11 @@ Exit criteria:
 - No tag, release, or template configuration is created.
 - Work pauses for starter-readiness review.
 
-### Phase 6 - Optional Azure AI extensions
+### Phase 6 - Optional Azure AI services
 
 Plan and implement optional Microsoft Foundry and Azure AI Document
 Intelligence capabilities through additive infrastructure. Plan Azure AI
-Search as a future extension without implementing Search resources or
+Search as a future module without implementing Search resources or
 examples in this phase.
 
 The approved approach adds conditional AI modules under
@@ -170,17 +170,17 @@ See the
 
 Exit criteria:
 
-- Each extension is independently optional.
+- Each AI service is independently optional.
 - Foundry and Document Intelligence support deploy-or-reference-existing
   modes.
-- No selected extensions is a successful no-op.
+- No selected services is a successful no-op for the new modules.
 - Base deployments remain compatible.
 - Identity, networking, diagnostics, region availability, quotas, and cost are
   documented.
 - Foundry and Document Intelligence include documentation-only REST/SDK usage
   commands and removal instructions.
 - Azure AI Search is clearly marked as planned but not implemented.
-- Every extension receives an independent review.
+- Every AI service module receives an independent review.
 
 ## Review Protocol
 

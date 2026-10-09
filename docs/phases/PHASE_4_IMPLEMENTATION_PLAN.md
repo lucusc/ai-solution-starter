@@ -89,7 +89,7 @@ exists. It must not modify, optimize, reorganize, or replace any Bicep file.
 - prompt editing in the application UI
 - deployment before explicit approval
 - Phase 5 starter hardening
-- Phase 6 Foundry, AI Search, and Document Intelligence extensions
+- Phase 6 Foundry, AI Search, and Document Intelligence optional services
 
 ## Immutable Contracts
 

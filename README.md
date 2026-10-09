@@ -140,7 +140,8 @@ The normal direction is:
   mechanisms;
 - replace work-item domain models, prompts, result schema, pages, and fixtures;
 - update backend, workflow, and frontend contracts together; and
-- use additive infrastructure extensions when new Azure services are required.
+- add optional Azure services through reviewed conditional modules under
+  `infra/modules/ai/`.
 
 ## Repository policy
 

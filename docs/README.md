@@ -19,7 +19,7 @@
 - [Phase task backlog](PHASE_TASKS.md)
 - [Source sanitization policy](SOURCE_SANITIZATION.md)
 - [Phase plans](phases/)
-- [Phase 6 optional AI extension plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md)
+- [Phase 6 optional AI services plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md)
 - [Implementation reports](reviews/)
 
 Infrastructure-specific contracts are under [infrastructure](infrastructure/).

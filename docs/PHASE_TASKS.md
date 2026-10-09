@@ -241,7 +241,7 @@ in [Phase 5 Implementation Plan](phases/PHASE_5_IMPLEMENTATION_PLAN.md).
 - Review the repository for reusable starter readiness.
 - Do not create a tag, release, or template configuration in Phase 5.
 
-## Phase 6 - Optional Azure AI Extensions
+## Phase 6 - Optional Azure AI Services
 
 **Status:** Phase 6 planning revised and awaiting approval.
 
