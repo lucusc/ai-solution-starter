@@ -92,7 +92,8 @@ Any change outside the additive scope above is a stop condition.
 - base parameter and environment-variable entries;
 - deterministic deploy-or-reference-existing resolution;
 - resource-ID validation before Azure changes;
-- extension outputs suitable for documentation and future application wiring;
+- typed Bicep outputs suitable for documentation and future application
+  wiring;
 - system-assigned or user-assigned managed identity where supported;
 - least-privilege Azure RBAC owned by each extension;
 - diagnostic settings owned by each extension when a compatible destination is
@@ -298,58 +299,45 @@ default rather than being treated as truthy.
 
 ### Deployment order
 
-The selector wrapper will:
+The existing base deployment will:
 
-1. load the selected azd environment when explicitly requested;
-2. validate all selected extension variables;
+1. load the selected azd environment;
+2. validate all base and optional AI-service parameters;
 3. validate Azure login, tenant, subscription, and required providers;
-4. validate the base Bicep checksum;
-5. run extension-local template validation;
+4. validate the approved Bicep checksum;
+5. compile and validate `infra/main.bicep`;
 6. produce a deployment preview or what-if when supported;
 7. request or verify the explicit live-deployment gate;
-8. invoke selected extensions in a deterministic order;
-9. collect normalized outputs;
-10. write non-secret outputs to the approved environment/output mechanism;
-11. print a concise deployment summary; and
-12. leave the base deployment untouched.
+8. deploy the base resource graph and conditionally selected AI modules in one
+   Bicep deployment; and
+9. export non-secret top-level Bicep outputs through the existing azd output
+   flow.
 
-Foundry should run before Document Intelligence only to keep reports stable;
-the two extensions must not depend on one another.
+Foundry and Document Intelligence must not depend on one another.
 
-## Shared Output Contract
+## Bicep Output Contract
 
-Each selected extension must emit a normalized JSON object:
+Each AI module will expose typed Bicep outputs required by
+`infra/main.bicep`. The base template will emit corresponding top-level
+outputs for azd and future application configuration.
 
-```json
-{
-  "extension": "foundry",
-  "mode": "deployed",
-  "resource_id": "/subscriptions/.../resourceGroups/.../providers/...",
-  "resource_group": "example-rg",
-  "location": "example-region",
-  "endpoint": "https://example.endpoint/",
-  "managed_identity_principal_id": null,
-  "created_resource_ids": [],
-  "referenced_resource_ids": [],
-  "configuration": {}
-}
-```
+The output contract will include, where applicable:
 
-Contract requirements:
+- mode: `disabled`, `deployed`, or `existing`;
+- resource ID;
+- resource group;
+- service location;
+- non-secret endpoint;
+- project ID and project endpoint for Foundry; and
+- managed identity principal ID when required for RBAC review.
 
-- `mode` is `deployed` or `existing`;
-- `created_resource_ids` contains only resources owned by the extension run;
-- `referenced_resource_ids` contains resources that removal must preserve;
-- credentials are never emitted;
-- endpoints are emitted only when they are not secret;
-- principal IDs may be emitted when needed for RBAC review;
-- service-specific values live under `configuration`;
-- output serialization is deterministic; and
-- invalid or incomplete output fails validation.
+Skipped services emit empty resource and endpoint values with mode
+`disabled`. Credentials, keys, connection strings, tokens, and document
+content are never outputs.
 
-The selector may write these values to a generated, ignored file for local
-composition. It must not commit environment output, tenant IDs, subscription
-IDs, resource IDs, endpoints, or principal IDs.
+No shared JSON object, JSON schema, generated output file, or separate local
+state contract is required. Resource ownership is determined from the
+selected mode and the Bicep deployment/resource graph.
 
 ## Naming, Tags, and Scope
 
@@ -797,9 +785,9 @@ Extension deployments must be repeatable.
   extension.
 - Re-running the same selected configuration should converge.
 - Existing-resource validation should not create state.
-- Generated output files are ignored and replaceable.
-- Scripts must not infer ownership only from resource names.
-- Ownership comes from deployment outputs and recorded created resource IDs.
+- Resource ownership must not be inferred only from resource names.
+- Ownership comes from the selected deploy/existing mode and the Bicep
+  deployment/resource graph.
 - A failed combined run must identify which extension completed.
 - Removal guidance must be safe after partial completion.
 
@@ -852,10 +840,9 @@ resolved resource IDs before deletion.
   applicable;
 - validate parameter-file syntax;
 - validate selector and resolution rules without Azure mutation;
-- test output-schema validation;
+- test typed module and top-level output behavior;
 - test no-service no-op behavior;
 - test contradictory and partial environment values;
-- test generated files are ignored;
 - validate documentation links;
 - run repository source-sanitization checks;
 - run `git diff --check`;
@@ -875,7 +862,7 @@ a fixture or command adapter. Tests must cover:
 - malformed booleans;
 - conflicting new and existing values;
 - one extension failing after another succeeds;
-- output merging;
+- top-level output selection for disabled, deployed, and existing modes;
 - secret-field rejection; and
 - removal ownership classification.
 
@@ -917,7 +904,7 @@ Live tests should progress in this order:
 2. Foundry project and optional baseline OpenAI connection;
 3. Document Intelligence new-resource or approved existing-resource mode;
 4. prebuilt Layout request using only a synthetic PDF;
-5. both selected through the wrapper; and
+5. both selected through the base deployment; and
 6. cleanup or preservation verification.
 
 No document content, response body, token, tenant-specific resource ID, or
@@ -932,7 +919,7 @@ workflow that:
   change;
 - compiles additive Bicep entry points;
 - tests selector logic;
-- validates extension output schemas;
+- validates typed module and top-level outputs;
 - checks documentation links;
 - verifies the baseline checksum; and
 - performs no Azure login or deployment.
@@ -974,7 +961,7 @@ Documentation must keep these statuses explicit:
 - Documentation examples use synthetic placeholders.
 - Existing-resource validation errors redact subscription and tenant context
   where logs could be published.
-- Generated output and environment files remain ignored.
+- Environment-specific deployment values remain untracked.
 - Role assignments are least privilege and scoped narrowly.
 - Public network examples include explicit security warnings.
 - Private DNS and firewall failures are surfaced rather than bypassed.
