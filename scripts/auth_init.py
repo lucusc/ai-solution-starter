@@ -186,8 +186,7 @@ async def main():
         print("Not setting up authentication.")
         exit(0)
 
-    auth_tenant = os.getenv("AZURE_AUTH_TENANT_ID",
-                            os.getenv("AZURE_TENANT_ID"))
+    auth_tenant = os.getenv("AZURE_AUTH_TENANT_ID") or os.getenv("AZURE_TENANT_ID")
     if not auth_tenant:
         print(
             "Error: No tenant ID set for authentication. Run `azd env set AZURE_AUTH_TENANT_ID tenant-id` to set the tenant ID."

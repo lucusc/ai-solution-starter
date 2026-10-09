@@ -1597,7 +1597,7 @@ module cosmosDbRoleOpenAi 'modules/security/documentdb-sql-role.bicep' = if (isA
 
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenantId
-output AZURE_AUTH_TENANT_ID string = authTenantId
+output AZURE_AUTH_TENANT_ID string = tenantIdForAuth
 output AZURE_RESOURCE_GROUP string = mainResourceGroup.name
 
 // Shared by all OpenAI deployments
