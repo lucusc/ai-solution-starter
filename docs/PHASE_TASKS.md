@@ -110,6 +110,12 @@ The summary below remains the high-level backlog.
 
 ## Phase 3 - Frontend Hello-World Application
 
+**Status:** Detailed planning complete and awaiting approval.
+
+The implementation-ready frontend, API-integration, static-hosting, testing,
+replacement-boundary, and review contracts are defined in
+[Phase 3 Implementation Plan](phases/PHASE_3_IMPLEMENTATION_PLAN.md).
+
 ### 3.1 Scaffold the frontend
 
 - Configure TypeScript, the selected web framework, build tooling, linting, and
