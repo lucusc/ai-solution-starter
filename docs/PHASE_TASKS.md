@@ -310,3 +310,76 @@ gates, and validation requirements are defined in
   and any approved live validation independently.
 - Keep Azure AI Search implementation deferred.
 - Do not push or release without separate approval.
+
+## Phase 7 - Foundry-First Defaults and Optional Azure OpenAI
+
+**Status:** Proposed requirements; awaiting implementation approval.
+
+The OpenAI service-mode contract, Foundry-first setup migration, demo and
+workflow integration, infrastructure exception, and validation gates are
+defined in
+[Phase 7 Implementation Plan](phases/PHASE_7_IMPLEMENTATION_PLAN.md).
+
+### 7.1 Approve the service and migration contracts
+
+- Define `USE_OPENAI=new|existing|none`, matching Foundry and Document
+  Intelligence selection, validation, ownership, and opt-in mutation behavior.
+- Make Foundry `new`, OpenAI `none`, and Document Intelligence `none` the
+  defaults for fresh environments.
+- Define migration of legacy OpenAI account/model switches and provider
+  settings; reject conflicts rather than silently overriding user choices.
+- Approve the minimum behavioral infrastructure exception and confirm the
+  Phase 4 workflow implementation/review prerequisite.
+
+### 7.2 Implement independent OpenAI selection
+
+- Wire account creation, existing-account references, model deployment,
+  outputs, identity, RBAC, networking, diagnostics, and connections to the
+  selected mode.
+- Require compatible existing-resource information for `existing`; reject
+  conflicting existing IDs in `new` or `none`.
+- Ensure `none` neither touches standalone OpenAI resources nor requires
+  OpenAI configuration to deploy or run the default solution.
+- Apply the shared existing-service mutation policy and document separate
+  approval for model deployment into an existing account.
+
+### 7.3 Migrate solution and setup defaults
+
+- Align Bicep, parameter substitutions, validators, setup hooks, azd,
+  environment examples, GitHub deployment paths, and exported settings.
+- Provision or reference a compatible Foundry model deployment for the demo;
+  do not rely on the optional connection to standalone Azure OpenAI.
+- Update setup, parameter catalog, architecture, cost, troubleshooting,
+  replacement, and service-removal guidance.
+- Update the parameter catalog as parameters change.
+
+### 7.4 Migrate the demo and Logic App to Foundry
+
+- Update demo configuration and any backend AI client, frontend descriptions,
+  workflow HTTP actions, deployment packaging, and smoke checks as applicable.
+- Use the approved Foundry inference endpoint, model deployment, API contract,
+  and managed-identity permissions.
+- Preserve PDF intake, structured output, idempotency, state transitions,
+  retries, and explicit failures.
+- Remove required standalone OpenAI settings and silent fallback from the
+  default application path.
+
+### 7.5 Validate and prepare review evidence
+
+- Test all service-mode combinations, fresh defaults, legacy migration,
+  malformed/conflicting inputs, existing-resource mutation policy, and
+  disabled-service resource references.
+- Compile Bicep and compare resource graphs for default, all-none, and explicit
+  OpenAI configurations against the approved pre-change baseline.
+- Validate the Foundry workflow with mocked boundaries and synthetic PDFs.
+- After separate approval, smoke-test the deployed default vertical slice
+  without a standalone OpenAI account.
+- Present the exact diff, documented migration, and acceptance evidence before
+  requesting a baseline-manifest update.
+
+### Phase 7 review gate
+
+- Review OpenAI selection, changed defaults, Foundry model integration, and
+  migration evidence independently.
+- Keep unrelated infrastructure changes and Azure AI Search out of scope.
+- Do not deploy, commit, push, or release without separate approval.

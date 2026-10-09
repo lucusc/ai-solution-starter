@@ -183,12 +183,44 @@ Exit criteria:
 - Azure AI Search is clearly marked as planned but not implemented.
 - Every AI service module receives an independent review.
 
+### Phase 7 - Foundry-first defaults and optional Azure OpenAI
+
+Give Azure OpenAI the same independent `new`, `existing`, and `none`
+selection contract as Foundry and Document Intelligence. Migrate the solution
+and setup defaults to `USE_FOUNDRY=new` and `USE_OPENAI=none`; keep
+`USE_DOCUMENT_INTELLIGENCE=none`. Explicitly configured existing environments
+require a documented migration rather than silently changing providers.
+
+Update the demo application and Logic App to use a model deployed through
+Foundry, with managed identity, instead of depending on a standalone Azure
+OpenAI account. Provision or reference the required Foundry model deployment;
+creating an account and project alone is not sufficient. The default vertical
+slice must work without an Azure OpenAI resource or Foundry-to-OpenAI connection.
+
+This is an intentional behavior change. Implementation requires approval of a
+focused infrastructure change-control exception and completion/review of the
+Phase 4 workflow prerequisite.
 
 See the
-
+[detailed Phase 7 implementation plan](phases/PHASE_7_IMPLEMENTATION_PLAN.md).
 
 Exit criteria:
-
+- Azure OpenAI supports validated `new`, `existing`, and `none` modes, with
+  explicit ownership and existing-resource mutation controls.
+- Fresh setup and every deployment configuration path agree on Foundry `new`,
+  OpenAI `none`, and Document Intelligence `none`.
+- OpenAI `none` creates or references no standalone OpenAI account, model
+  deployment, connection, role assignment, diagnostic setting, or private
+  endpoint and leaves no required OpenAI application configuration.
+- The demo and Logic App use Foundry endpoints, model configuration, and
+  identities while preserving existing PDF, structured-output, and work-item
+  lifecycle contracts.
+- Legacy OpenAI settings have a documented, tested migration with explicit
+  errors for conflicting configuration and no silent provider fallback.
+- Local validation covers service-mode combinations and the Foundry workflow;
+  live Azure validation requires separate approval.
+- The exact infrastructure diff and resource-graph changes are reviewed before
+  any approved baseline-manifest update.
 
 - Work pauses for review before any separately approved commit or push.
 
