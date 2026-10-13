@@ -6,11 +6,6 @@ OpenAI, managed identity, monitoring, private networking, and automated
 deployment. The included PDF work-item experience is intentionally small and
 replaceable.
 
-> [!IMPORTANT]
-> The Bicep baseline is immutable. Do not optimize, reorganize, or simplify
-> files under `infra/`. Adapt application code around the established
-> infrastructure contract.
-
 ## Component status
 
 | Component | Status |
