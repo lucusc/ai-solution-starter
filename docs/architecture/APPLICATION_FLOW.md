@@ -22,21 +22,25 @@ sequenceDiagram
 The API accepts PDFs only, up to 20 MB. A required idempotency key prevents an
 ambiguous client retry from creating another work item.
 
-## Planned processing flow
+## Document processing flow
 
-Phase 4 will implement:
+The Phase 4 Logic Apps Standard package, implemented as Phase 7's final step,
+processes eligible PDFs:
 
 ```text
 queued
   -> Logic App claims processing with Cosmos ETag
   -> reads PDF and generic instructions
-  -> calls Azure OpenAI with managed identity
+  -> calls the configured Foundry model with managed identity
   -> validates summary, category, and key_points
   -> persists completed or failed
 ```
 
-This segment is not implemented yet. See the
-[Phase 4 plan](../phases/PHASE_4_IMPLEMENTATION_PLAN.md).
+The Foundry inference endpoint and deployment are emitted by infrastructure;
+standalone Azure OpenAI is not required. Azure execution remains a separate
+approval and validation gate. See the
+[Phase 4 plan](../phases/PHASE_4_IMPLEMENTATION_PLAN.md) and
+[Phase 7 plan](../phases/PHASE_7_IMPLEMENTATION_PLAN.md).
 
 ## Read flow
 
@@ -51,8 +55,8 @@ authorization failure, not-found, navigation, or page cleanup.
 | create `submitted` | Backend |
 | `submitted -> queued` | Backend |
 | `submitted -> failed` | Backend intake compensation |
-| `queued -> processing` | Planned Logic App |
-| `processing -> completed` | Planned Logic App |
-| `processing -> failed` | Planned Logic App |
+| `queued -> processing` | Logic App |
+| `processing -> completed` | Logic App |
+| `processing -> failed` | Logic App |
 
 Completed and failed records are terminal.

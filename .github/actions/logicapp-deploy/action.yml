@@ -38,19 +38,54 @@ runs:
       shell: bash
       env:
         PACKAGE: ${{ inputs.package }}
+        RUNNER_TEMP: ${{ runner.temp }}
       run: |
-        pushd "$PACKAGE" || exit
+        set -euo pipefail
+        stage="$(mktemp -d "${RUNNER_TEMP}/logicapp-package.XXXXXX")"
+        archive="${RUNNER_TEMP}/logicapp-package.zip"
+        cleanup() {
+          rm -rf "$stage"
+        }
+        trap cleanup EXIT
 
-        mv -f parameters.json parameters.json.bak
-        mv -f azure.parameters.json parameters.json
+        cp -R "$PACKAGE"/. "$stage"/
+        cp "$stage/azure.parameters.json" "$stage/parameters.json"
+        (cd "$stage" && zip -q -r "$archive" . -x "*.git*" "*.DS_Store" "node_modules/*" "dist/*" "*.bak")
+        echo "archive=$archive" >> "$GITHUB_ENV"
 
-        zip -r ${{ runner.temp }}/zip.zip . -x "*.git*" "*.DS_Store" "node_modules/*" "dist/*" "**.bak"
+    - name: Upload Foundry workflow instructions
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+      run: |
+        set -euo pipefail
+        storage_account="$(azd env get-value AZURE_STORAGE_ACCOUNT)"
+        instructions_container="$(azd env get-value AZURE_STORAGE_INSTRUCTIONS_CONTAINER)"
+        system_file="$(azd env get-value AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE)"
+        processing_file="$(azd env get-value AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE)"
+        test -n "$storage_account"
+        test -n "$instructions_container"
+        test -n "$system_file"
+        test -n "$processing_file"
 
-        # Restore the original parameters file
-        mv -f parameters.json azure.parameters.json
-        mv -f parameters.json.bak parameters.json
-
-        popd || exit
+        az storage blob upload \
+          --auth-mode login \
+          --account-name "$storage_account" \
+          --container-name "$instructions_container" \
+          --name "$system_file" \
+          --file "$(dirname "$PACKAGE")/instructions/system.md" \
+          --content-type "text/markdown" \
+          --overwrite true \
+          --only-show-errors
+        az storage blob upload \
+          --auth-mode login \
+          --account-name "$storage_account" \
+          --container-name "$instructions_container" \
+          --name "$processing_file" \
+          --file "$(dirname "$PACKAGE")/instructions/processing.md" \
+          --content-type "text/markdown" \
+          --overwrite true \
+          --only-show-errors
 
     - name: Deploy to Azure Logic App
       uses: azure/cli@v2.1.0
@@ -64,7 +99,7 @@ runs:
 
           az logicapp deployment source config-zip --name "$LOGIC_APP_NAME" \
                                                   --resource-group "$RESOURCE_GROUP" \
-                                                  --src "${{ runner.temp }}/zip.zip"
+                                                  --src "${{ runner.temp }}/logicapp-package.zip"
 
           deploy_status=$?
 

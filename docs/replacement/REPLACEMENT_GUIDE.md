@@ -153,7 +153,8 @@ Keep same-origin API calls unless hosting is intentionally redesigned.
 
 ## Workflow and prompt replacement
 
-The workflow is planned in Phase 4 and not implemented yet. When present:
+The Logic Apps Standard workflow is implemented in Phase 7's final step and
+uses Microsoft Foundry inference. When replacing its generic behavior:
 
 - replace generic instruction files with newly authored solution instructions;
 - change the structured output schema together with backend/frontend contracts;

@@ -43,6 +43,12 @@ param principalType string = 'ServicePrincipal'
 param cognitiveServicesUserRoleId string
 param connectAzureOpenAi bool = false
 param azureOpenAiEndpoint string = ''
+param modelDeploymentName string = 'starter-gpt-4o'
+param modelName string = 'gpt-4o'
+param modelVersion string = '2024-11-20'
+param modelSkuName string = 'Standard'
+param modelCapacity int = 30
+param deployModel bool = false
 
 var shouldConfigureAccount = mode == 'new' || configureExistingResource
 
@@ -108,6 +114,40 @@ resource projectInExistingAccount 'Microsoft.CognitiveServices/accounts/projects
 resource existingProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' existing = if (mode == 'existing' && !empty(existingProjectName)) {
   parent: existingAccount
   name: existingProjectName
+}
+
+resource newAccountModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (mode == 'new') {
+  parent: newAccount
+  name: modelDeploymentName
+  sku: {
+    name: modelSkuName
+    capacity: modelCapacity
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: modelName
+      version: modelVersion
+    }
+    versionUpgradeOption: 'NoAutoUpgrade'
+  }
+}
+
+resource existingAccountModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (mode == 'existing' && deployModel) {
+  parent: existingAccount
+  name: modelDeploymentName
+  sku: {
+    name: modelSkuName
+    capacity: modelCapacity
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: modelName
+      version: modelVersion
+    }
+    versionUpgradeOption: 'NoAutoUpgrade'
+  }
 }
 
 resource newProjectOpenAiConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-06-01' = if (mode == 'new' && connectAzureOpenAi) {
@@ -228,4 +268,7 @@ output projectPrincipalId string = mode == 'new'
 output accountPrincipalId string = mode == 'new'
   ? newAccount.identity.principalId
   : (existingAccount.identity.?principalId ?? '')
+output inferenceEndpoint string = 'https://${accountName}.openai.azure.com/openai/v1/'
+output modelDeploymentName string = modelDeploymentName
+output modelName string = modelName
 output configuredExistingResource bool = mode == 'existing' && shouldConfigureAccount

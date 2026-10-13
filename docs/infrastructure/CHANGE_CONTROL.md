@@ -17,10 +17,16 @@ The approved Bicep files form a protected behavioral baseline.
   RBAC, diagnostics, and application settings must not be optimized,
   reorganized, simplified, reformatted, renamed, upgraded, or behaviorally
   changed.
+- Phase 7 grants a focused behavioral exception for Foundry-first defaults and
+  independent Azure OpenAI `new`/`existing`/`none` selection. It permits only
+  the required AI parameters, Foundry model deployment, conditional AI module
+  wiring, directly coupled app settings, inference RBAC, and associated
+  networking/diagnostics. Unrelated baseline modules and behavior remain
+  protected.
 - When conditional AI wiring changes a file covered by the checksum manifest,
   update the manifest only after exact-diff review, Bicep compilation, and
   no-service resource-graph comparison. The manifest update requires explicit
-  approval.
+  approval separate from this implementation request.
 - Every infrastructure change must run:
 
 ```bash

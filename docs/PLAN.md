@@ -197,9 +197,9 @@ OpenAI account. Provision or reference the required Foundry model deployment;
 creating an account and project alone is not sufficient. The default vertical
 slice must work without an Azure OpenAI resource or Foundry-to-OpenAI connection.
 
-This is an intentional behavior change. Implementation requires approval of a
-focused infrastructure change-control exception and completion/review of the
-Phase 4 workflow prerequisite.
+This is an intentional behavior change. Implementation requires a focused
+infrastructure change-control exception. The Phase 4 Logic App package is
+implemented as the final step of this phase, updated to use Foundry inference.
 
 See the
 [detailed Phase 7 implementation plan](phases/PHASE_7_IMPLEMENTATION_PLAN.md).
@@ -214,7 +214,8 @@ Exit criteria:
   endpoint and leaves no required OpenAI application configuration.
 - The demo and Logic App use Foundry endpoints, model configuration, and
   identities while preserving existing PDF, structured-output, and work-item
-  lifecycle contracts.
+  lifecycle contracts. The Phase 4 Logic App package is implemented as the
+  final step of this phase.
 - Legacy OpenAI settings have a documented, tested migration with explicit
   errors for conflicting configuration and no silent provider fallback.
 - Local validation covers service-mode combinations and the Foundry workflow;

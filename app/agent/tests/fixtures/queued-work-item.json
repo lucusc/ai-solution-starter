@@ -1,0 +1,19 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "owner_id": "synthetic-owner",
+  "status": "queued",
+  "version": 2,
+  "source_name": "synthetic.pdf",
+  "source": {
+    "blob_name": "work-items/550e8400-e29b-41d4-a716-446655440000/source.pdf",
+    "content_type": "application/pdf",
+    "size_bytes": 128,
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "idempotency_key_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "result": null,
+  "error": null,
+  "_etag": "\"synthetic-etag\""
+}

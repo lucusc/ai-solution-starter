@@ -18,7 +18,7 @@ replaceable.
 | Azure infrastructure and deployment baseline | Implemented and checksum protected |
 | Quart backend and persistence contracts | Implemented locally; pending review/push |
 | React frontend and static hosting | Implemented locally; pending review/push |
-| Logic App and Azure OpenAI processing workflow | Planned in Phase 4; not implemented |
+| Logic App and Foundry processing workflow | Implemented locally in Phase 7; Azure validation remains gated |
 | Starter-readiness documentation and validation | Implemented locally; pending review |
 | Optional Foundry and Document Intelligence infrastructure | Implemented locally; defaults to `none`; pending review |
 

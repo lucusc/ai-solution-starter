@@ -80,7 +80,8 @@ infrastructure review.
 
 ## Logic App package is missing
 
-The Logic App business workflow is Phase 4 work and is not implemented. The
+The Logic App workflow package is under `app/agent/workflows` and uses the
+Microsoft Foundry inference endpoint and deployment. The
 infrastructure resource can exist without the starter processing package.
 
 ## Logic Apps Standard capacity is unavailable
@@ -91,9 +92,11 @@ the infrastructure baseline during Phase 5.
 
 ## Work item remains queued or processing
 
-Until Phase 4 is implemented, queued records are expected to remain queued.
-After Phase 4, use its workflow run history and safe correlation ID guidance;
-do not expose document or prompt content in diagnostics.
+Confirm the Logic App package is deployed, the Blob trigger has detected the
+input, and the workflow identity has Blob, Cosmos, and Foundry data-plane
+access. Use the workflow run and work-item ID to correlate safe diagnostics;
+do not expose document or prompt content. A stale `processing` item is not
+automatically recovered by the starter workflow.
 
 ## Azure OpenAI deployment fails
 

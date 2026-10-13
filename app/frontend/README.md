@@ -69,8 +69,10 @@ In Azure, App Service Easy Auth protects the application and provides
 `/.auth/me`, `/.auth/login/aad`, and `/.auth/logout`. The browser account name
 is presentation-only and is never sent as an owner identifier.
 
-## Phase boundary
+## Processing provider
 
-Phase 3 represents every lifecycle state with test-only fixtures. The Logic App
-and Azure AI workflow that produces processing and completed states is Phase 4
-work.
+The Logic Apps Standard workflow processes accepted PDFs using the
+infrastructure-selected Microsoft Foundry deployment. Standalone Azure OpenAI
+is optional and is not required for the demo. The workflow's Azure execution
+and end-to-end inference remain subject to the separate deployment approval
+gate.

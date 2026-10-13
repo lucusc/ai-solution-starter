@@ -30,7 +30,7 @@ if [ "$deploy_component" == "agent" ] || [ "$deploy_component" == "all" ]; then
 
     agent_name=$(azd env get-value AZURE_LOGICAPP_SERVICE_NAME)
 
-    . ./app/agent/deploy.sh "$resource_group" "$agent_name"
+    ./app/agent/deploy.sh "$resource_group" "$agent_name"
 fi
 
 echo "Done."

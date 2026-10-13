@@ -112,12 +112,17 @@ def _check_ai_service_contract(errors: list[str]) -> None:
     parameters_path = REPO_ROOT / "infra" / "main.parameters.json"
     parameters = json.loads(parameters_path.read_text(encoding="utf-8"))["parameters"]
     expected = {
-        "useFoundry": "${USE_FOUNDRY=none}",
+        "useFoundry": "${USE_FOUNDRY=new}",
+        "useOpenAi": "${USE_OPENAI=none}",
         "useDocumentIntelligence": "${USE_DOCUMENT_INTELLIGENCE=none}",
+        "existingOpenAiResourceId": "${EXISTING_OPENAI_RESOURCE_ID}",
+        "deployOpenAiModelsExisting": "${DEPLOY_OPENAI_MODELS_EXISTING=false}",
         "foundryAccountResourceId": "${EXISTING_FOUNDRY_ACCOUNT_RESOURCE_ID}",
         "foundryProjectResourceId": "${EXISTING_FOUNDRY_PROJECT_RESOURCE_ID}",
+        "foundryModelDeploymentName": "${AZURE_FOUNDRY_MODEL_DEPLOYMENT=starter-gpt-4o}",
         "documentIntelligenceResourceId": "${EXISTING_DOCUMENT_INTELLIGENCE_RESOURCE_ID}",
         "configureExistingAiServices": "${CONFIGURE_EXISTING_AI_SERVICES=false}",
+        "deployFoundryModelExisting": "${DEPLOY_FOUNDRY_MODEL_EXISTING=false}",
     }
     for parameter, value in expected.items():
         if parameters.get(parameter, {}).get("value") != value:

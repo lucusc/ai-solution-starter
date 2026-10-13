@@ -22,10 +22,11 @@ require `AZURE_PRINCIPAL_ID`.
 | Logic App system identity | Storage resource group | Account, blob, table, queue, file, and message-processing roles |
 | Logic App system identity | Primary resource group | AcrPull |
 | Logic App system identity | Cosmos DB account | Cosmos DB Built-in Data Contributor |
+| Logic App user-assigned identity | Selected Foundry account | Cognitive Services OpenAI User when Foundry is enabled |
 | Azure OpenAI managed identity | Cosmos DB account | Cosmos DB Built-in Data Contributor |
 | Operator or deployment principal | New Foundry or Document Intelligence account | Cognitive Services User |
 | Operator or deployment principal | Selected existing Foundry or Document Intelligence account | Cognitive Services User only when `CONFIGURE_EXISTING_AI_SERVICES=true` |
-| Foundry project system identity | Azure OpenAI resource group | Cognitive Services OpenAI User when `FOUNDRY_CONNECT_BASE_OPENAI=true` |
+| Foundry project system identity | Azure OpenAI resource group | Cognitive Services OpenAI User when `FOUNDRY_CONNECT_BASE_OPENAI=true` and `USE_OPENAI` is `new` or `existing` |
 | Azure diagnostics service principal | Storage resource group | Storage Blob Data Contributor |
 
 The template also creates Logic App connection access policies for the Logic

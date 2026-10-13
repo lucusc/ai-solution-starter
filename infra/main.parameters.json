@@ -113,11 +113,14 @@
     "openAiHost": {
       "value": "${OPENAI_HOST=azure}"
     },
-    "deployAzureOpenAi": {
-      "value": "${DEPLOY_AZURE_OPENAI=true}"
+    "useOpenAi": {
+      "value": "${USE_OPENAI=none}"
     },
-    "deployAzureOpenModels": {
-      "value": "${DEPLOY_AZURE_OPEN_MODELS=true}"
+    "existingOpenAiResourceId": {
+      "value": "${EXISTING_OPENAI_RESOURCE_ID}"
+    },
+    "deployOpenAiModelsExisting": {
+      "value": "${DEPLOY_OPENAI_MODELS_EXISTING=false}"
     },
     "openAiServiceName": {
       "value": "${AZURE_OPENAI_SERVICE}"
@@ -222,7 +225,7 @@
       "value": "${CONFIGURE_EXISTING_AI_SERVICES=false}"
     },
     "useFoundry": {
-      "value": "${USE_FOUNDRY=none}"
+      "value": "${USE_FOUNDRY=new}"
     },
     "foundryAccountName": {
       "value": "${AZURE_FOUNDRY_ACCOUNT}"
@@ -247,6 +250,24 @@
     },
     "foundryConnectBaseOpenAi": {
       "value": "${FOUNDRY_CONNECT_BASE_OPENAI=false}"
+    },
+    "foundryModelDeploymentName": {
+      "value": "${AZURE_FOUNDRY_MODEL_DEPLOYMENT=starter-gpt-4o}"
+    },
+    "foundryModelName": {
+      "value": "${AZURE_FOUNDRY_MODEL_NAME=gpt-4o}"
+    },
+    "foundryModelVersion": {
+      "value": "${AZURE_FOUNDRY_MODEL_VERSION=2024-11-20}"
+    },
+    "foundryModelSkuName": {
+      "value": "${AZURE_FOUNDRY_MODEL_SKU=Standard}"
+    },
+    "foundryModelCapacity": {
+      "value": "${AZURE_FOUNDRY_MODEL_CAPACITY=30}"
+    },
+    "deployFoundryModelExisting": {
+      "value": "${DEPLOY_FOUNDRY_MODEL_EXISTING=false}"
     },
     "useDocumentIntelligence": {
       "value": "${USE_DOCUMENT_INTELLIGENCE=none}"

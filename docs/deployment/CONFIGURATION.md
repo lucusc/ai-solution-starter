@@ -20,13 +20,22 @@ Before provisioning, decide:
 - generated or existing VNet and private DNS behavior;
 - App Service and Logic Apps Standard SKUs;
 - Cosmos DB free, provisioned, or serverless mode;
-- Azure OpenAI account creation or approved existing account;
-- optional Foundry and Document Intelligence `new`, `existing`, or `none`
-  modes;
+- Foundry `new`, `existing`, or `none` mode (fresh default: `new`);
+- standalone Azure OpenAI `new`, `existing`, or `none` mode (fresh default:
+  `none`);
+- Document Intelligence `new`, `existing`, or `none` mode (fresh default:
+  `none`);
 - model names, versions, capacity, and regional availability;
 - monitoring enablement;
 - role-assignment behavior; and
 - authentication application setup.
+
+The default demo inference path deploys a Foundry model and uses the Logic
+App's managed identity. It does not require a standalone Azure OpenAI account,
+an API key, or a Foundry project connection to Azure OpenAI. Existing
+environments that set legacy OpenAI selectors must migrate to `USE_OPENAI`;
+the preprovision validator reports conflicting settings rather than silently
+changing the provider. See [AI service configuration](../infrastructure/AI_SERVICES.md).
 
 ## Authentication setup
 
@@ -74,6 +83,6 @@ resource IDs, and incompatible existing resource kinds. See
 
 ## Phase 4 boundary
 
-The repository does not currently contain the deployable Logic App business
-workflow. Do not enable application deployment expecting an AI processing flow
-until Phase 4 is implemented and reviewed.
+The Logic App workflow package is implemented as the final step of Phase 7.
+Until its implementation report is present and reviewed, do not enable
+application deployment expecting a running processing flow.

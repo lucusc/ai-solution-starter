@@ -1,0 +1,42 @@
+{
+  "inputContainer": {
+    "type": "String",
+    "value": "@appsetting('AZURE_STORAGE_INPUT_CONTAINER')"
+  },
+  "instructionsContainer": {
+    "type": "String",
+    "value": "@appsetting('AZURE_STORAGE_INSTRUCTIONS_CONTAINER')"
+  },
+  "systemInstructionsFile": {
+    "type": "String",
+    "value": "@appsetting('AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE')"
+  },
+  "processingInstructionsFile": {
+    "type": "String",
+    "value": "@appsetting('AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE')"
+  },
+  "cosmosAccountUri": {
+    "type": "String",
+    "value": "@appsetting('AZURE_COSMOS_ACCOUNT_URI')"
+  },
+  "cosmosDatabase": {
+    "type": "String",
+    "value": "@appsetting('AZURE_COSMOS_DATABASE')"
+  },
+  "cosmosContainer": {
+    "type": "String",
+    "value": "@appsetting('AZURE_COSMOS_CONTAINER')"
+  },
+  "foundryInferenceEndpoint": {
+    "type": "String",
+    "value": "@appsetting('AZURE_FOUNDRY_INFERENCE_ENDPOINT')"
+  },
+  "foundryDeploymentName": {
+    "type": "String",
+    "value": "@appsetting('AZURE_FOUNDRY_DEPLOYMENT_NAME')"
+  },
+  "workflowsIdentityResourceId": {
+    "type": "String",
+    "value": "@appsetting('WORKFLOWS_IDENTITY_RESOURCE_ID')"
+  }
+}

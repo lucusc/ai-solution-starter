@@ -16,7 +16,8 @@ az bicep build --file infra/main.bicep --stdout > /dev/null
 The baseline must be preserved without refactoring or optimization. See
 [`CHANGE_CONTROL.md`](../docs/infrastructure/CHANGE_CONTROL.md).
 
-Microsoft Foundry and Azure AI Document Intelligence are additive conditional
-modules under `modules/ai/`; both default to `none`. Azure AI Search remains
-deferred. See
+Microsoft Foundry defaults to `new` and includes the model deployment required
+by the demo inference workflow. Standalone Azure OpenAI and Document
+Intelligence default to `none`; Azure OpenAI also supports `existing`.
+Azure AI Search remains deferred. See
 [`AI_SERVICES.md`](../docs/infrastructure/AI_SERVICES.md).

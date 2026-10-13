@@ -2,12 +2,14 @@
 
 ## Status
 
-**Planning complete; awaiting approval.** This document defines the proposed
-Logic Apps Standard and Azure OpenAI implementation. It does not authorize
-implementation, deployment, a push, or any Bicep change.
+**Implementation is part of Phase 7.** This contract defines the Logic Apps
+Standard workflow using Microsoft Foundry inference. Azure deployment, a
+push, and changes outside Phase 7's approved infrastructure scope remain
+separate review gates.
 
-Phase 2 and Phase 3 remain local and unpushed. Phase 4 implementation must be
-added only after this plan is explicitly approved.
+Phase 2 and Phase 3 remain local and unpushed. The workflow is the final
+implementation step of Phase 7; it does not authorize Azure deployment or
+changes outside Phase 7's focused infrastructure scope.
 
 ## Objective
 
@@ -19,14 +21,14 @@ the starter's PDF vertical slice:
 3. wait for the backend to finish the `submitted -> queued` transition;
 4. claim queued work with optimistic concurrency;
 5. load versioned instructions from Blob Storage;
-6. send the PDF directly to the configured vision-capable Azure OpenAI
-   deployment;
+6. send the PDF directly to the configured vision-capable Foundry deployment;
 7. validate a strict structured response;
 8. persist an explicit `completed` or `failed` state; and
 9. expose the result through the existing backend and frontend contracts.
 
-The implementation must adapt to the Phase 1 infrastructure exactly as it
-exists. It must not modify, optimize, reorganize, or replace any Bicep file.
+The workflow must consume the app settings and identity emitted by the
+approved Phase 7 infrastructure change. Phase 4 work itself adds no
+infrastructure resources and does not broaden that change.
 
 ## Approved Decisions
 
@@ -35,8 +37,8 @@ exists. It must not modify, optimize, reorganize, or replace any Bicep file.
 | Trigger | Azure Blob Storage: blob added or updated |
 | Trigger scope | `work-items/<work-item-id>/source.pdf` in the configured input container |
 | Workflow concurrency | One trigger run at a time |
-| PDF processing | Azure OpenAI Responses API with inline base64 PDF input |
-| Azure authentication | Existing user-assigned managed identity; no keys |
+| PDF processing | Microsoft Foundry Responses API with inline base64 PDF input |
+| Azure authentication | System-assigned identity for the built-in Blob connector and the existing user-assigned identity for Cosmos and Foundry HTTP; no keys |
 | Prompt source | Existing instruction Blob container and configured filenames |
 | Result fields | `summary`, `category`, and `key_points` |
 | Categories | `informational`, `action_required`, `reference`, `other` |
@@ -51,14 +53,14 @@ exists. It must not modify, optimize, reorganize, or replace any Bicep file.
 
 - deployable Logic Apps Standard package under `app/agent/workflows`
 - generic system and processing instruction files
-- managed-identity built-in Blob and Cosmos connections
+- managed-identity built-in Blob connection and Cosmos REST data-plane calls
 - Blob-added-or-updated trigger
 - exact blob-path validation and work-item ID extraction
 - bounded handling of the blob-created-before-queued race
 - cross-partition Cosmos lookup by validated work-item ID
 - ETag-protected processing claim
 - PDF and instruction reads from Blob Storage
-- Azure OpenAI Responses API call through the HTTP action
+- Microsoft Foundry Responses API call through the HTTP action
 - inline `data:application/pdf;base64,...` file input
 - strict JSON Schema structured output
 - result parsing and validation
@@ -72,7 +74,7 @@ exists. It must not modify, optimize, reorganize, or replace any Bicep file.
 
 ### Excluded
 
-- every Bicep change
+- additional infrastructure changes beyond the approved Phase 7 scope
 - new Azure resources, identities, roles, connectors, or application settings
 - Cosmos DB indexing or partition-key changes
 - backend public endpoint changes
@@ -80,8 +82,8 @@ exists. It must not modify, optimize, reorganize, or replace any Bicep file.
 - PDF text extraction through Document Intelligence or another service
 - Azure OpenAI keys, Storage keys, Cosmos keys, connection strings, or SAS
   tokens
-- Azure OpenAI Files API uploads
-- the built-in Azure OpenAI chat connector
+- Foundry Files API uploads
+- standalone Azure OpenAI accounts or the built-in Azure OpenAI chat connector
 - human review, approval, retry, cancel, delete, or requeue UI actions
 - workflow-triggered callbacks to the backend
 - automatic recovery of indefinitely stale `processing` records
@@ -100,8 +102,10 @@ exists. It must not modify, optimize, reorganize, or replace any Bicep file.
 - Use the existing Logic Apps Standard resource and elastic App Service plan.
 - Use the existing input and instruction Blob containers.
 - Use the existing Cosmos DB account, database, and work-item container.
-- Use the existing vision-capable Azure OpenAI deployment.
-- Use the existing user-assigned Logic App identity.
+- Use the configured vision-capable Foundry model deployment.
+- Use the Logic App's system-assigned identity for the built-in Blob
+  connection, and the existing user-assigned Logic App identity for Cosmos
+  REST and Foundry HTTP authentication.
 - Use the existing networking, diagnostics, and private-access behavior.
 - Do not add an Event Grid resource, Service Bus resource, Function App,
   connector resource, or application setting.
@@ -117,24 +121,21 @@ The workflow must consume the settings already supplied by the baseline:
 | `AZURE_STORAGE_INSTRUCTIONS_CONTAINER` | Prompt asset container |
 | `AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE` | Generic system instructions |
 | `AZURE_STORAGE_PROCESSING_INSTRUCTIONS_FILE` | Generic processing instructions |
-| `AZURE_COSMOS_ACCOUNT_URI` | Built-in Cosmos connector endpoint |
+| `AZURE_COSMOS_ACCOUNT_URI` | Cosmos REST data-plane endpoint |
 | `AZURE_COSMOS_DATABASE` | Work-item database |
 | `AZURE_COSMOS_CONTAINER` | Work-item container |
-| `AZURE_OPENAI_ENDPOINT` | Responses API resource endpoint |
-| `AZURE_OPENAI_DEPLOYMENT_NAME` | Vision-capable deployment name |
-| `WORKFLOWS_IDENTITY_RESOURCE_ID` | User-assigned managed identity |
+| `AZURE_FOUNDRY_INFERENCE_ENDPOINT` | Foundry Responses API base endpoint |
+| `AZURE_FOUNDRY_DEPLOYMENT_NAME` | Vision-capable Foundry deployment name |
+| `WORKFLOWS_IDENTITY_RESOURCE_ID` | User-assigned managed identity for Cosmos and Foundry HTTP calls |
 
-`AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE`,
-`AZURE_OPENAI_MODEL_NAME`, `AZURE_OPENAI_MODEL_VERSION`,
-`AZURE_OPENAI_RESOURCE_ID`, and
+`AZURE_STORAGE_EVALUATION_INSTRUCTIONS_FILE` and
 `AZURE_COSMOS_CONNECTIONRUNTIMEURL` remain available but are not required by
-the initial generic workflow.
+the workflow.
 
-The pre-created `documentdb` managed API connection must remain untouched. The
-workflow will prefer the Standard built-in Cosmos connector because it accepts
-the existing account URI and managed identity directly and exposes ETag-aware
-item operations. This is an application-package choice, not an infrastructure
-change.
+The pre-created `documentdb` managed API connection must remain untouched.
+The workflow uses Cosmos REST calls over HTTP with managed identity,
+partition-key headers, and `If-Match` ETags so optimistic concurrency is
+explicit in the package.
 
 ### Backend and Blob contract
 
@@ -221,8 +222,8 @@ app/agent/
 │   ├── fixtures/
 │   │   ├── blob-trigger.json
 │   │   ├── queued-work-item.json
-│   │   ├── openai-success.json
-│   │   └── openai-invalid-output.json
+│   │   ├── foundry-success.json
+│   │   └── foundry-invalid-output.json
 │   └── test_workflow_package.py
 └── workflows/
     ├── host.json
@@ -397,7 +398,7 @@ If the claim conflicts:
 - terminate successfully when it is now `processing`, `completed`, or
   `failed`;
 - retry the claim only if it is still `queued` and the retry budget remains;
-- never invoke Azure OpenAI before a successful claim.
+- never invoke Foundry before a successful claim.
 
 ## Blob Read and PDF Transfer
 
@@ -423,19 +424,19 @@ that would base64-encode an already encoded connector body.
 
 The 20 MB backend limit implies an approximately 26.7 MB base64 payload before
 JSON overhead. Deployed validation must confirm that this remains within the
-effective Logic Apps action and Azure OpenAI request limits. If the accepted
+effective Logic Apps action and Foundry request limits. If the accepted
 20 MB contract cannot be processed inline, implementation must stop for design
 review; it must not silently lower the backend limit or switch to the Files
 API.
 
-## Azure OpenAI Request Contract
+## Microsoft Foundry Request Contract
 
 ### Endpoint and identity
 
 Use an HTTP `POST` action against:
 
 ```text
-<AZURE_OPENAI_ENDPOINT>/openai/v1/responses
+<AZURE_FOUNDRY_INFERENCE_ENDPOINT>responses
 ```
 
 Normalize the endpoint to avoid a duplicate slash. Use:
@@ -590,7 +591,7 @@ Initial stable codes:
 | `instruction_read_failed` | Required instruction asset unavailable | `true` for transient dependency failures |
 | `source_read_failed` | Source PDF unavailable after claim | `true` for transient dependency failures |
 | `source_contract_invalid` | Stored source metadata or content is invalid | `false` |
-| `ai_request_failed` | Azure OpenAI request failed after retries | based on final status |
+| `ai_request_failed` | Foundry inference request failed after retries | based on final status |
 | `ai_response_incomplete` | Model did not produce a complete usable response | `true` |
 | `ai_response_invalid` | Structured output failed validation | `false` |
 | `result_persistence_failed` | Reserved for operational reporting; cannot be reported as persisted success | `true` |
@@ -627,7 +628,7 @@ manual diagnosis path must be documented for Phase 5 hardening.
 | Cosmos query/read | Retry `408`, `429`, and `5xx` with bounded exponential backoff |
 | ETag conflict | Re-read status; never blind-retry stale content |
 | Instruction and PDF reads | Retry `408`, `429`, and `5xx` |
-| Azure OpenAI | Retry `408`, `429`, and `5xx`; honor service delay where supported |
+| Foundry inference | Retry `408`, `429`, and `5xx`; honor service delay where supported |
 | JSON/schema validation | Do not retry the same response |
 | Terminal Cosmos write | Retry transient failures; handle conflicts by re-read |
 | Authentication/authorization | Do not repeatedly retry deterministic `401/403` failures |
@@ -646,7 +647,7 @@ Validate_Trigger
   -> Wait_For_Queued
   -> Claim_Processing
   -> Load_Instructions_And_Source
-  -> Invoke_Azure_OpenAI
+  -> Invoke_Foundry
   -> Validate_Result
   -> Persist_Completed
 
@@ -664,7 +665,7 @@ mutate a record that the workflow did not claim.
 
 The implementation is correct only if all invariants hold:
 
-1. Azure OpenAI is not called before `queued -> processing` succeeds.
+1. Foundry is not called before `queued -> processing` succeeds.
 2. A duplicate Blob event for `processing`, `completed`, or `failed` performs
    no model call.
 3. Every Cosmos replacement uses the ETag from the record version it modifies.
@@ -703,7 +704,7 @@ Do not log or track:
 - PDF content or base64;
 - source filename when not necessary;
 - prompt or instruction content;
-- Azure OpenAI request or response bodies;
+- Foundry request or response bodies;
 - summary or key-point content;
 - owner ID;
 - idempotency key or hash;
@@ -865,7 +866,7 @@ size. It must not estimate from unrelated artifacts.
 - Unrelated blobs perform no dependency or model work.
 - Malformed IDs cannot enter a Cosmos query.
 - Zero or ambiguous record matches fail visibly.
-- Existing terminal and processing records do not invoke Azure OpenAI.
+- Existing terminal and processing records do not invoke Foundry.
 
 ## Work Package 4.3 - Bridge Readiness and Claim Processing
 
@@ -881,7 +882,7 @@ size. It must not estimate from unrelated artifacts.
 
 - The expected Blob/backend race does not lose normal submissions.
 - `submitted` is never mutated by the workflow.
-- Azure OpenAI is not called without a successful claim.
+- Foundry is not called without a successful claim.
 - Duplicate and competing runs cannot both claim one queued item.
 
 ## Work Package 4.4 - Read PDF and Instructions
@@ -901,7 +902,7 @@ size. It must not estimate from unrelated artifacts.
 - PDF and prompt content do not appear in run history or logs.
 - Missing or invalid assets enter the claimed failure path.
 
-## Work Package 4.5 - Invoke Azure OpenAI
+## Work Package 4.5 - Invoke Microsoft Foundry
 
 ### Tasks
 
@@ -964,7 +965,7 @@ size. It must not estimate from unrelated artifacts.
 2. Test path and UUID guards.
 3. Test readiness and duplicate-delivery contracts.
 4. Test ETag and retry configuration.
-5. Test valid and invalid Azure OpenAI fixtures.
+5. Test valid and invalid Foundry fixtures.
 6. Test result compatibility in backend and frontend.
 7. Run existing backend and frontend validation.
 8. Verify Bicep checksums and repository hygiene.
@@ -1025,7 +1026,7 @@ size. It must not estimate from unrelated artifacts.
  └─> 4.2 Trigger and correlation
       └─> 4.3 Readiness and processing claim
            └─> 4.4 PDF and instruction reads
-                └─> 4.5 Azure OpenAI invocation
+                └─> 4.5 Foundry inference
                      └─> 4.6 Terminal persistence
                           └─> 4.7 Observability
                                └─> 4.8 Tests and regressions
@@ -1034,7 +1035,7 @@ size. It must not estimate from unrelated artifacts.
 ```
 
 Instruction authoring and trigger implementation may proceed in parallel after
-package scaffolding. Azure OpenAI work begins only after the processing claim
+package scaffolding. Foundry work begins only after the processing claim
 and content-read contracts are testable.
 
 ## Review Artifacts
@@ -1064,7 +1065,7 @@ The Phase 4 implementation review must include:
 - The Blob/backend queue race is handled without mutating `submitted`.
 - Queued work is claimed exactly once with ETag concurrency.
 - PDF and instructions are read with managed identity.
-- Azure OpenAI receives the PDF through the Responses API.
+- Foundry receives the PDF through the Responses API.
 - Output is strictly validated as summary, category, and key points.
 - Completion and failure states preserve the existing Cosmos contract.
 - Duplicate deliveries do not repeat model processing.
@@ -1072,22 +1073,26 @@ The Phase 4 implementation review must include:
 - Existing backend and frontend behavior remains compatible.
 - Local package and regression validation passes.
 - Approved deployed validation passes when that gate is exercised.
-- Bicep remains unchanged.
+- Phase 4 adds no infrastructure resources or settings.
 - Implementation remains unpushed until explicitly approved.
 
 ## Stop Conditions
 
 Stop and request review if:
 
-- any requirement appears to need a Bicep change;
+- any requirement appears to need infrastructure changes beyond Phase 7's
+  approved scope;
 - Blob trigger support requires a new connector resource or Event Grid
   resource;
-- the built-in connector cannot authenticate with the existing user-assigned
-  identity;
-- Cosmos ETag replacement is unavailable in the deployable connector shape;
+- the built-in connector cannot authenticate with the Logic App's
+  system-assigned identity, or that identity lacks the required Blob
+  data-plane role; the built-in connector does not use the user-assigned
+  identity used by the Cosmos and Foundry HTTP actions;
+- Cosmos ETag replacement is unavailable in the authenticated REST data-plane
+  shape;
 - the blob event cannot be correlated without changing the backend contract;
 - the readiness loop cannot reliably bridge the backend queue race;
-- the Azure OpenAI deployment does not support Responses API PDF input and
+- the selected Foundry deployment does not support Responses API PDF input and
   strict structured outputs;
 - managed identity cannot obtain the required Azure AI token;
 - inline request limits cannot support the accepted 20 MB PDF contract;

@@ -42,9 +42,14 @@ param storageEvaluationInstructionsFile string
 
 @allowed(['azure', 'openai', 'azure_custom'])
 param openAiHost string // Set in main.parameters.json
-param isAzureOpenAiHost bool = startsWith(openAiHost, 'azure')
-param deployAzureOpenAi bool = true
-param deployAzureOpenModels bool = true
+@allowed([
+  'new'
+  'existing'
+  'none'
+])
+param useOpenAi string = 'none'
+param existingOpenAiResourceId string = ''
+param deployOpenAiModelsExisting bool = false
 param azureOpenAiCustomUrl string = ''
 param azureOpenAiApiVersion string = ''
 @secure()
@@ -69,6 +74,7 @@ param cosmosDbWorkItemApiVersion string = '2023-10-15' // Version of the Cosmos 
 // https://learn.microsoft.com/azure/ai-services/openai/concepts/models?tabs=python-secure%2Cstandard%2Cstandard-chat-completions#standard-deployment-model-availability
 @description('Location for the OpenAI resource group')
 @allowed([
+  ''
   'canadaeast'
   'eastus'
   'eastus2'
@@ -98,7 +104,7 @@ param openAiApiOrganization string = ''
   'existing'
   'none'
 ])
-param useFoundry string = 'none'
+param useFoundry string = 'new'
 param foundryAccountName string = ''
 param foundryAccountResourceId string = ''
 param foundryProjectName string = 'starter'
@@ -107,6 +113,12 @@ param foundryResourceGroupName string = ''
 param foundryLocation string = location
 param foundrySkuName string = 'S0'
 param foundryConnectBaseOpenAi bool = false
+param foundryModelDeploymentName string = 'starter-gpt-4o'
+param foundryModelName string = 'gpt-4o'
+param foundryModelVersion string = '2024-11-20'
+param foundryModelSkuName string = 'Standard'
+param foundryModelCapacity int = 30
+param deployFoundryModelExisting bool = false
 
 @allowed([
   'new'
@@ -121,6 +133,20 @@ param documentIntelligenceLocation string = location
 param documentIntelligenceSkuName string = 'S0'
 
 param configureExistingAiServices bool = false
+
+var isAzureOpenAiHost = openAiHost == 'azure' && useOpenAi != 'none'
+var configureSelectedOpenAiResource = useOpenAi == 'new' || configureExistingAiServices
+var openAiExistingResourceParts = split(existingOpenAiResourceId, '/')
+var selectedOpenAiSubscriptionId = useOpenAi == 'existing'
+  ? openAiExistingResourceParts[2]
+  : subscription().subscriptionId
+var selectedOpenAiResourceGroupName = useOpenAi == 'existing'
+  ? openAiExistingResourceParts[4]
+  : (!empty(openAiResourceGroupName) ? openAiResourceGroupName : mainResourceGroup.name)
+var selectedOpenAiServiceName = useOpenAi == 'existing'
+  ? openAiExistingResourceParts[8]
+  : (!empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}')
+var deployOpenAiModelSet = useOpenAi == 'new' || (useOpenAi == 'existing' && deployOpenAiModelsExisting)
 
 param chatGptModelName string = ''
 param chatGptDeploymentName string = ''
@@ -299,8 +325,9 @@ resource mainResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' exist
   name: selectedResourceGroupName
 }
 
-resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(openAiResourceGroupName)) {
-  name: !empty(openAiResourceGroupName) ? openAiResourceGroupName : mainResourceGroup.name
+resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  name: selectedOpenAiResourceGroupName
+  scope: subscription(selectedOpenAiSubscriptionId)
 }
 
 resource storageResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(storageResourceGroupName)) {
@@ -476,7 +503,7 @@ var appEnvVariables = {
   AZURE_OPENAI_CHATGPT_MODEL: chatGpt.modelName
   AZURE_OPENAI_GPT4V_MODEL: gpt4v.modelName
   // Specific to Azure OpenAI
-  AZURE_OPENAI_SERVICE: isAzureOpenAiHost ? (deployAzureOpenAi ? openAi.outputs.name : existingOpenAi.name) : ''
+  AZURE_OPENAI_SERVICE: isAzureOpenAiHost ? (useOpenAi == 'new' ? openAi.outputs.name : existingOpenAi.name) : ''
   AZURE_OPENAI_CHATGPT_DEPLOYMENT: chatGpt.deploymentName
   AZURE_OPENAI_EMB_DEPLOYMENT: embedding.deploymentName
   AZURE_OPENAI_GPT4V_DEPLOYMENT: useGPT4V ? gpt4v.deploymentName : ''
@@ -626,15 +653,10 @@ module logicApp 'br/public:avm/res/web/site:0.16.0' = {
           AZURE_COSMOS_ACCOUNT_URI: cosmosDb.outputs.endpoint
           AZURE_COSMOS_CONTAINER: cosmosDbWorkItemContainerName
           AZURE_COSMOS_DATABASE: cosmosDbWorkItemDatabaseName
-          AZURE_OPENAI_DEPLOYMENT_NAME: gpt4v.deploymentName
-          AZURE_OPENAI_ENDPOINT: isAzureOpenAiHost
-            ? (deployAzureOpenAi ? openAi.outputs.endpoint : existingOpenAi.properties.endpoint)
-            : ''
-          AZURE_OPENAI_MODEL_NAME: gpt4v.modelName
-          AZURE_OPENAI_MODEL_VERSION: gpt4v.deploymentVersion
-          AZURE_OPENAI_RESOURCE_ID: isAzureOpenAiHost
-            ? (deployAzureOpenAi ? openAi.outputs.resourceId : existingOpenAi.id)
-            : ''
+          AZURE_FOUNDRY_INFERENCE_ENDPOINT: foundryEnabled ? foundry.outputs.inferenceEndpoint : ''
+          AZURE_FOUNDRY_DEPLOYMENT_NAME: foundryEnabled ? foundry.outputs.modelDeploymentName : ''
+          AZURE_FOUNDRY_MODEL_NAME: foundryEnabled ? foundry.outputs.modelName : ''
+          AZURE_FOUNDRY_RESOURCE_ID: foundryEnabled ? foundry.outputs.accountId : ''
           AZURE_STORAGE_ENDPOINT: storage.outputs.primaryEndpoints.blob
           AZURE_STORAGE_INSTRUCTIONS_CONTAINER: storageInstructionsContainerName
           AZURE_STORAGE_SYSTEM_INSTRUCTIONS_FILE: storageSystemInstructionsFile
@@ -796,11 +818,11 @@ var openAiDeployments = concat(
     : []
 )
 
-module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzureOpenAiHost && deployAzureOpenAi) {
+module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzureOpenAiHost && useOpenAi == 'new') {
   name: 'openai'
   scope: openAiResourceGroup
   params: {
-    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+    name: selectedOpenAiServiceName
     location: openAiLocation
     tags: tags
     kind: 'OpenAI'
@@ -822,12 +844,12 @@ module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzure
   }
 }
 
-resource existingOpenAi 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = if (isAzureOpenAiHost && !deployAzureOpenAi) {
-  name: openAiServiceName
+resource existingOpenAi 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = if (isAzureOpenAiHost && useOpenAi == 'existing') {
+  name: selectedOpenAiServiceName
   scope: openAiResourceGroup
 }
 
-module openAiDeploymentsInExistingOpenAi 'modules/ai/openai-deployments.bicep' = if (isAzureOpenAiHost && !deployAzureOpenAi && deployAzureOpenModels) {
+module openAiDeploymentsInExistingOpenAi 'modules/ai/openai-deployments.bicep' = if (isAzureOpenAiHost && useOpenAi == 'existing' && deployOpenAiModelSet) {
   name: 'openai-deployments'
   scope: openAiResourceGroup
   params: {
@@ -860,9 +882,15 @@ module foundry 'modules/ai/foundry.bicep' = if (foundryEnabled) {
     principalId: principalId
     principalType: principalType
     cognitiveServicesUserRoleId: roles.CognitiveServicesUser
-    connectAzureOpenAi: foundryConnectBaseOpenAi
-    azureOpenAiEndpoint: openAiHost == 'azure'
-      ? (deployAzureOpenAi ? openAi.outputs.endpoint : existingOpenAi.properties.endpoint)
+    connectAzureOpenAi: foundryConnectBaseOpenAi && isAzureOpenAiHost
+    modelDeploymentName: foundryModelDeploymentName
+    modelName: foundryModelName
+    modelVersion: foundryModelVersion
+    modelSkuName: foundryModelSkuName
+    modelCapacity: foundryModelCapacity
+    deployModel: useFoundry == 'new' || deployFoundryModelExisting
+    azureOpenAiEndpoint: isAzureOpenAiHost
+      ? (useOpenAi == 'new' ? openAi.outputs.endpoint : existingOpenAi.properties.endpoint)
       : ''
   }
 }
@@ -985,12 +1013,14 @@ module isolation 'network-isolation.bicep' = {
 
 var environmentData = environment()
 
-var openAiPrivateEndpointConnection = (isAzureOpenAiHost && deployAzureOpenAi)
+var openAiPrivateEndpointConnection = (isAzureOpenAiHost && configureSelectedOpenAiResource)
   ? [
       {
         groupId: 'account'
         dnsZoneName: 'privatelink.openai.azure.com'
-        resourceIds: [openAi.outputs.resourceId]
+        resourceIds: [
+          useOpenAi == 'new' ? openAi.outputs.resourceId : existingOpenAi.id
+        ]
       }
     ]
   : []
@@ -1102,7 +1132,7 @@ module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint) {
 // USER ROLES
 var principalType = empty(runningOnGh) && empty(runningOnAdo) ? 'User' : 'ServicePrincipal'
 
-module foundryProjectOpenAiRole 'modules/security/role.bicep' = if (foundryEnabled && foundryConnectBaseOpenAi && openAiHost == 'azure' && assignRoles) {
+module foundryProjectOpenAiRole 'modules/security/role.bicep' = if (foundryEnabled && foundryConnectBaseOpenAi && isAzureOpenAiHost && assignRoles) {
   scope: openAiResourceGroup
   name: 'foundry-project-openai-role'
   params: {
@@ -1112,17 +1142,27 @@ module foundryProjectOpenAiRole 'modules/security/role.bicep' = if (foundryEnabl
   }
 }
 
-var firstId = !deployAzureOpenAi && !empty(existingOpenAi.identity.?userAssignedIdentities)
+module foundryRoleLogicUserAssigned 'modules/security/role.bicep' = if (foundryEnabled && (useFoundry == 'new' || configureExistingAiServices) && assignRoles) {
+  scope: az.resourceGroup(foundrySubscriptionId, selectedFoundryResourceGroupName)
+  name: 'foundry-role-logic-user-assigned'
+  params: {
+    principalId: logicIdentity.outputs.principalId
+    roleDefinitionId: roles.CognitiveServicesOpenAIUser
+    principalType: 'ServicePrincipal'
+  }
+}
+
+var firstId = useOpenAi == 'existing' && !empty(existingOpenAi.identity.?userAssignedIdentities)
   ? first(objectKeys(existingOpenAi.identity.userAssignedIdentities))
   : ''
-var existingOpenAiUserIdentityPrincipalId = !deployAzureOpenAi && !empty(firstId)
+var existingOpenAiUserIdentityPrincipalId = useOpenAi == 'existing' && !empty(firstId)
   ? existingOpenAi.identity.userAssignedIdentities[firstId!].principalId
   : ''
-var existingOpenAiManagedIdentityPrincipalId = (!deployAzureOpenAi && !empty(existingOpenAi.identity.?principalId)
+var existingOpenAiManagedIdentityPrincipalId = (useOpenAi == 'existing' && !empty(existingOpenAi.identity.?principalId)
   ? existingOpenAi.identity.principalId
   : existingOpenAiUserIdentityPrincipalId)
 
-module openAiRoleUser 'modules/security/role.bicep' = if (isAzureOpenAiHost && assignRoles && !empty(principalId)) {
+module openAiRoleUser 'modules/security/role.bicep' = if (isAzureOpenAiHost && configureSelectedOpenAiResource && assignRoles && !empty(principalId)) {
   scope: openAiResourceGroup
   name: 'openai-role-user'
   params: {
@@ -1237,7 +1277,7 @@ module queueDataMessageSenderRoleUser 'modules/security/role.bicep' = if (assign
 }
 
 // SYSTEM IDENTITIES
-module openAiRoleBackend 'modules/security/role.bicep' = if (isAzureOpenAiHost && assignRoles) {
+module openAiRoleBackend 'modules/security/role.bicep' = if (isAzureOpenAiHost && configureSelectedOpenAiResource && assignRoles) {
   scope: openAiResourceGroup
   name: 'openai-role-backend'
   params: {
@@ -1320,7 +1360,7 @@ module storageContribRoleDiag 'modules/security/role.bicep' = if (assignRoles) {
   }
 }
 
-module openAiRoleLogicUserAssigned 'modules/security/role.bicep' = if (isAzureOpenAiHost && assignRoles) {
+module openAiRoleLogicUserAssigned 'modules/security/role.bicep' = if (isAzureOpenAiHost && configureSelectedOpenAiResource && assignRoles) {
   scope: openAiResourceGroup
   name: 'openai-role-logic-user-assigned'
   params: {
@@ -1330,7 +1370,7 @@ module openAiRoleLogicUserAssigned 'modules/security/role.bicep' = if (isAzureOp
   }
 }
 
-module openAiRoleLogic 'modules/security/role.bicep' = if (isAzureOpenAiHost && assignRoles) {
+module openAiRoleLogic 'modules/security/role.bicep' = if (isAzureOpenAiHost && configureSelectedOpenAiResource && assignRoles) {
   scope: openAiResourceGroup
   name: 'openai-role-logic'
   params: {
@@ -1582,12 +1622,12 @@ module cosmosDbRoleLogic 'modules/security/documentdb-sql-role.bicep' = if (assi
   }
 }
 
-module cosmosDbRoleOpenAi 'modules/security/documentdb-sql-role.bicep' = if (isAzureOpenAiHost && assignRoles) {
+module cosmosDbRoleOpenAi 'modules/security/documentdb-sql-role.bicep' = if (isAzureOpenAiHost && configureSelectedOpenAiResource && assignRoles) {
   scope: cosmosDbResourceGroup
   name: 'cosmosdb-role-openai'
   params: {
     databaseAccountName: cosmosDb.outputs.name
-    principalId: deployAzureOpenAi
+    principalId: useOpenAi == 'new'
       ? openAi.outputs.systemAssignedMIPrincipalId
       : existingOpenAiManagedIdentityPrincipalId
     // Cosmos DB Built-in Data Contributor role
@@ -1608,7 +1648,7 @@ output AZURE_OPENAI_GPT4V_MODEL string = gpt4v.modelName
 
 // Specific to Azure OpenAI
 output AZURE_OPENAI_SERVICE string = isAzureOpenAiHost
-  ? (deployAzureOpenAi ? openAi.outputs.name : existingOpenAi.name)
+  ? (useOpenAi == 'new' ? openAi.outputs.name : existingOpenAi.name)
   : ''
 output AZURE_OPENAI_API_VERSION string = isAzureOpenAiHost ? azureOpenAiApiVersion : ''
 output AZURE_OPENAI_RESOURCE_GROUP string = isAzureOpenAiHost ? openAiResourceGroup.name : ''
@@ -1629,6 +1669,10 @@ output AZURE_FOUNDRY_PROJECT string = foundryEnabled ? foundry.outputs.projectNa
 output AZURE_FOUNDRY_PROJECT_ID string = foundryEnabled ? foundry.outputs.projectId : ''
 output AZURE_FOUNDRY_PROJECT_ENDPOINT string = foundryEnabled ? foundry.outputs.projectEndpoint : ''
 output AZURE_FOUNDRY_PROJECT_PRINCIPAL_ID string = foundryEnabled ? foundry.outputs.projectPrincipalId : ''
+output AZURE_FOUNDRY_INFERENCE_ENDPOINT string = foundryEnabled ? foundry.outputs.inferenceEndpoint : ''
+output AZURE_FOUNDRY_MODEL_DEPLOYMENT_NAME string = foundryEnabled ? foundry.outputs.modelDeploymentName : ''
+output AZURE_FOUNDRY_MODEL_NAME string = foundryEnabled ? foundry.outputs.modelName : ''
+output USE_OPENAI string = useOpenAi
 
 output USE_DOCUMENT_INTELLIGENCE string = useDocumentIntelligence
 output AZURE_DOCUMENT_INTELLIGENCE_ACCOUNT string = documentIntelligenceEnabled

@@ -1,0 +1,42 @@
+{
+  "inputContainer": {
+    "type": "String",
+    "value": "local-inputs"
+  },
+  "instructionsContainer": {
+    "type": "String",
+    "value": "local-instructions"
+  },
+  "systemInstructionsFile": {
+    "type": "String",
+    "value": "system.md"
+  },
+  "processingInstructionsFile": {
+    "type": "String",
+    "value": "processing.md"
+  },
+  "cosmosAccountUri": {
+    "type": "String",
+    "value": "https://local-cosmos.documents.azure.com:443/"
+  },
+  "cosmosDatabase": {
+    "type": "String",
+    "value": "starter"
+  },
+  "cosmosContainer": {
+    "type": "String",
+    "value": "inputs"
+  },
+  "foundryInferenceEndpoint": {
+    "type": "String",
+    "value": "https://local-foundry.openai.azure.com/openai/v1/"
+  },
+  "foundryDeploymentName": {
+    "type": "String",
+    "value": "local-gpt-4o"
+  },
+  "workflowsIdentityResourceId": {
+    "type": "String",
+    "value": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/local/providers/Microsoft.ManagedIdentity/userAssignedIdentities/local"
+  }
+}

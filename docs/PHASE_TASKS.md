@@ -149,8 +149,8 @@ replacement-boundary, and review contracts are defined in
 
 ## Phase 4 - Logic App and Azure AI Integration
 
-**Status:** Detailed implementation planning complete; implementation has not
-started.
+**Status:** Workflow package implemented locally as the final step of Phase 7;
+deployed validation remains a separate approval gate.
 
 The implementation-ready trigger, concurrency, managed-identity, structured
 output, failure, observability, testing, and deployment-validation contracts
@@ -313,7 +313,7 @@ gates, and validation requirements are defined in
 
 ## Phase 7 - Foundry-First Defaults and Optional Azure OpenAI
 
-**Status:** Proposed requirements; awaiting implementation approval.
+**Status:** Implemented locally; awaiting infrastructure and workflow review.
 
 The OpenAI service-mode contract, Foundry-first setup migration, demo and
 workflow integration, infrastructure exception, and validation gates are
@@ -377,9 +377,22 @@ defined in
 - Present the exact diff, documented migration, and acceptance evidence before
   requesting a baseline-manifest update.
 
+### 7.6 Implement the Phase 4 application workflows (final step)
+
+- Implement the Logic App Standard workflow package after the Foundry service,
+  infrastructure, configuration, and documentation changes.
+- Use Foundry Responses API inference and managed identity, with no standalone
+  Azure OpenAI dependency.
+- Preserve Phase 4 PDF, work-item lifecycle, idempotency, ETag, output-schema,
+  retry, failure, and safe-logging contracts.
+- Add package, fixture, and synthetic-PDF tests and complete Phase 4
+  implementation evidence.
+- Keep Azure deployment behind separate approval.
+
 ### Phase 7 review gate
 
 - Review OpenAI selection, changed defaults, Foundry model integration, and
-  migration evidence independently.
+  migration evidence, including the final-step Phase 4 workflow package,
+  independently.
 - Keep unrelated infrastructure changes and Azure AI Search out of scope.
 - Do not deploy, commit, push, or release without separate approval.

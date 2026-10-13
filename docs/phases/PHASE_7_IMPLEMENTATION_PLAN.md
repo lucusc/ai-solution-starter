@@ -2,17 +2,17 @@
 
 ## Status
 
-**Proposed requirements; awaiting implementation approval.** This phase plans
-optional Azure OpenAI selection and a Foundry-first solution. It does not
-authorize implementation, Azure deployment, a baseline-manifest update, a
-commit, or a push.
+**Local implementation in progress.** This phase implements optional
+standalone Azure OpenAI selection and a Foundry-first solution. Azure
+deployment, a Bicep baseline-manifest update, a commit, and a push remain
+separate review gates and have not been performed.
 
 Earlier phases retain their historical contracts and review gates. Their
 defaults and preservation requirements are not changed by the behavior
-proposed here. Phase 4 currently defines an Azure OpenAI workflow; its
-implementation and review must be complete before migrating that workflow. If
-Phase 4 is still unimplemented, review a Foundry-aligned revision of that plan
-explicitly rather than claiming an existing workflow has been migrated.
+proposed here. This phase includes implementing the Phase 4 application workflows as its
+final step, updated to call Foundry rather than depend on standalone Azure OpenAI.
+The existing work-item, PDF, structured-output, and state-transition contracts
+remain in force.
 
 ## Objective
 
@@ -20,9 +20,10 @@ explicitly rather than claiming an existing workflow has been migrated.
    as Foundry and Document Intelligence.
 2. Default fresh solution setup to Foundry `new`, OpenAI `none`, and Document
    Intelligence `none`.
-3. Make the demo application and Logic App use Foundry-hosted model inference
-   without requiring a standalone Azure OpenAI account.
-4. Preserve the PDF vertical slice, managed identity, structured response,
+3. Make the demo application use Foundry-hosted model inference without
+   requiring a standalone Azure OpenAI account.
+4. Implement the Phase 4 Logic App workflows as the final step of this phase.
+5. Preserve the PDF vertical slice, managed identity, structured response,
    work-item lifecycle, and operational error contracts.
 
 Using an OpenAI-compatible API or SDK to call a Foundry-hosted model does not
@@ -151,16 +152,16 @@ Preserve the flat deployment-parameter schema and keep the catalog aligned
 with intentionally added or removed mappings rather than freezing the old
 parameter count.
 
-### 7.4 Demo application and Logic App migration
+### 7.4 Demo application and workflow integration contract
 
 Update the demo's configuration, any backend inference client, frontend
 provider descriptions, and operational guidance wherever they currently
 depend on standalone Azure OpenAI. Do not introduce a backend AI call merely
 to replace a provider name if the workflow owns inference.
 
-Update the Phase 4 workflow HTTP action, model/endpoint settings, managed
-identity, package fixtures, deployment wiring, and smoke expectations to
-invoke Foundry. Preserve:
+Define the Phase 4 workflow changes needed for Foundry inference, including
+endpoint, deployment name, API version, managed identity, package tests,
+deployment wiring, and smoke expectations. Preserve:
 
 - authenticated PDF intake and the existing size limit;
 - instruction loading and versioning;
@@ -173,7 +174,7 @@ The frontend and backend must retain their public API and persistence
 contracts. Update readiness/deployment checks where applicable to expose
 missing Foundry configuration without making a false success claim.
 
-### 7.5 Documentation and validation
+### 7.5 Documentation and infrastructure validation
 
 Update current setup, deployment configuration, parameter catalog, AI service
 guide, architecture/application flow, cost drivers, troubleshooting,
@@ -182,6 +183,25 @@ between a Foundry-hosted model and an optional standalone Azure OpenAI account.
 Keep historical phase decisions identifiable rather than rewriting history.
 
 Extend existing validation and tests; do not add unrelated tooling.
+
+### 7.6 Implement the Phase 4 application workflows (final step)
+
+Only after the Foundry service contract, infrastructure wiring, application
+settings, and documentation are implemented and locally validated, implement
+the Phase 4 Logic App Standard package under `app/agent/workflows`. This is
+the final implementation step of Phase 7 and must use Foundry inference, not a
+standalone Azure OpenAI dependency.
+
+Implement the existing Phase 4 contract: Blob trigger, work-item correlation,
+bounded `submitted`/`queued` race handling, ETag-protected state claims and
+terminal updates, instruction loading, Foundry Responses API PDF inference
+using the emitted inference endpoint and deployment name, strict structured
+output, explicit retryable and terminal errors, safe correlation logging, and
+package/fixture validation. Add synthetic-PDF and mocked integration tests.
+Deploy or run against Azure only after separate approval.
+
+Do not report the workflow as implemented until the package, validation,
+documentation, and implementation evidence are complete.
 
 | Acceptance criterion | Required evidence |
 | --- | --- |
@@ -195,6 +215,7 @@ Extend existing validation and tests; do not add unrelated tooling.
 | Work-item behavior is preserved | Synthetic-PDF tests cover success, duplicate delivery, schema failure, retryable errors, terminal errors, and disabled/missing Foundry |
 | Infrastructure changes are bounded | Compiled graph comparisons for defaults, all-none, OpenAI `new`, and OpenAI `existing` show only approved differences |
 | Governance remains intact | Bicep compilation, approved baseline verification, parameter/catalog consistency, and repository documentation checks pass |
+| Phase 4 workflow is implemented last | The deployable package, workflow contract tests, synthetic-PDF fixtures, Foundry-only inference settings, and Phase 4 implementation report all exist and pass local checks |
 | Deployed flow works when approved | Synthetic PDF reaches a Foundry-generated result and completed UI state with OpenAI `none`; deployed resource inventory confirms no standalone OpenAI account |
 
 Local validation is required before review. A live Azure test is a separate
@@ -202,16 +223,20 @@ permission/cost gate and must not be implied by compilation or mocked tests.
 
 ## Sequence and Review Gates
 
-1. Refine and approve service contracts, legacy precedence, Foundry model/API
-   compatibility, Phase 4 prerequisite, and the infrastructure exception.
+1. Approve service contracts, legacy precedence, Foundry model/API
+   compatibility, and the focused infrastructure exception.
 2. Implement and review independent OpenAI modes and ownership controls.
 3. Implement Foundry model readiness and align solution/setup defaults.
-4. Migrate the demo and Logic App, their configuration, and documentation.
-5. Run local validation and present exact diff/resource-graph evidence before
+4. Align the demo and workflow integration contract, configuration, and
+   documentation.
+5. Run local infrastructure/configuration validation and present exact
+   diff/resource-graph evidence before
    requesting approval for the baseline-manifest update.
-6. Run deployed validation only after separate Azure approval; record its
+6. Implement and locally validate the Phase 4 application workflows as the
+   final implementation step.
+7. Run deployed validation only after separate Azure approval; record its
    outcome separately from local evidence.
-7. Pause for final phase review before any separately approved commit or push.
+8. Pause for final phase review before any separately approved commit or push.
 
 Record completed implementation evidence in
 `docs/reviews/PHASE_7_IMPLEMENTATION_REPORT.md` only after implementation.

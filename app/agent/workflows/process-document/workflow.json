@@ -1,0 +1,1143 @@
+{
+  "kind": "Stateful",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "inputContainer": {
+        "type": "String"
+      },
+      "instructionsContainer": {
+        "type": "String"
+      },
+      "systemInstructionsFile": {
+        "type": "String"
+      },
+      "processingInstructionsFile": {
+        "type": "String"
+      },
+      "cosmosAccountUri": {
+        "type": "String"
+      },
+      "cosmosDatabase": {
+        "type": "String"
+      },
+      "cosmosContainer": {
+        "type": "String"
+      },
+      "foundryInferenceEndpoint": {
+        "type": "String"
+      },
+      "foundryDeploymentName": {
+        "type": "String"
+      },
+      "workflowsIdentityResourceId": {
+        "type": "String"
+      }
+    },
+    "triggers": {
+      "Blob_added_or_updated": {
+        "type": "ServiceProvider",
+        "inputs": {
+          "serviceProviderConfiguration": {
+            "connectionName": "azureblob",
+            "operationId": "onUpdatedFile",
+            "serviceProviderId": "/serviceProviders/AzureBlob"
+          },
+          "parameters": {
+            "container": "@parameters('inputContainer')",
+            "folder": "work-items"
+          }
+        },
+        "recurrence": {
+          "frequency": "Minute",
+          "interval": 1
+        },
+        "runtimeConfiguration": {
+          "concurrency": {
+            "runs": 1
+          }
+        }
+      }
+    },
+    "actions": {
+      "Initialize_workflow_state": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "workItemId",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "name": "claimed",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "name": "currentRecord",
+              "type": "object",
+              "value": {}
+            },
+            {
+              "name": "currentStatus",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "Validate_trigger_path": {
+        "type": "If",
+        "expression": {
+          "and": [
+            {
+              "equals": [
+                "@triggerBody()?['container']",
+                "@parameters('inputContainer')"
+              ]
+            },
+            {
+              "startsWith": [
+                "@triggerBody()?['path']",
+                "work-items/"
+              ]
+            },
+            {
+              "endsWith": [
+                "@triggerBody()?['path']",
+                "/source.pdf"
+              ]
+            },
+            {
+              "equals": [
+                "@length(split(triggerBody()?['path'], '/'))",
+                3
+              ]
+            },
+            {
+              "equals": [
+                "@length(split(first(skip(split(triggerBody()?['path'], '/'), 1)), '-'))",
+                5
+              ]
+            },
+            {
+              "equals": [
+                "@length(first(skip(split(triggerBody()?['path'], '/'), 1)))",
+                36
+              ]
+            },
+            {
+              "equals": [
+                "@first(skip(split(triggerBody()?['path'], '/'), 1))",
+                "@toLower(first(skip(split(triggerBody()?['path'], '/'), 1)))"
+              ]
+            },
+            {
+              "equals": [
+                "@length(first(split(first(skip(split(triggerBody()?['path'], '/'), 1)), '-')))",
+                8
+              ]
+            },
+            {
+              "equals": [
+                "@length(first(skip(split(first(skip(split(triggerBody()?['path'], '/'), 1)), '-'), 1)))",
+                4
+              ]
+            },
+            {
+              "equals": [
+                "@length(first(skip(split(first(skip(split(triggerBody()?['path'], '/'), 1)), '-'), 2)))",
+                4
+              ]
+            },
+            {
+              "equals": [
+                "@length(first(skip(split(first(skip(split(triggerBody()?['path'], '/'), 1)), '-'), 3)))",
+                4
+              ]
+            },
+            {
+              "equals": [
+                "@length(last(split(first(skip(split(triggerBody()?['path'], '/'), 1)), '-')))",
+                12
+              ]
+            },
+            {
+              "contains": [
+                "12345678",
+                "@substring(first(skip(split(triggerBody()?['path'], '/'), 1)), 14, 1)"
+              ]
+            },
+            {
+              "contains": [
+                "89ab",
+                "@substring(first(skip(split(triggerBody()?['path'], '/'), 1)), 19, 1)"
+              ]
+            },
+            {
+              "equals": [
+                "@length(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(toLower(first(skip(split(triggerBody()?['path'], '/'), 1))), '-', ''), '0', ''), '1', ''), '2', ''), '3', ''), '4', ''), '5', ''), '6', ''), '7', ''), '8', ''), '9', ''), 'a', ''), 'b', ''), 'c', ''), 'd', ''), 'e', ''), 'f', ''))",
+                0
+              ]
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_workflow_state": [
+            "Succeeded"
+          ]
+        },
+        "actions": {
+          "Set_work_item_id": {
+            "type": "SetVariable",
+            "inputs": {
+              "name": "workItemId",
+              "value": "@first(skip(split(triggerBody()?['path'], '/'), 1))"
+            }
+          },
+          "Query_work_item": {
+            "type": "Http",
+            "inputs": {
+              "method": "POST",
+              "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs')}",
+              "headers": {
+                "Content-Type": "application/query+json",
+                "x-ms-version": "2018-12-31",
+                "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                "x-ms-documentdb-isquery": "True",
+                "x-ms-documentdb-query-enablecrosspartition": "True"
+              },
+              "body": {
+                "query": "SELECT TOP 2 * FROM c WHERE c.id = @id",
+                "parameters": [
+                  {
+                    "name": "@id",
+                    "value": "@variables('workItemId')"
+                  }
+                ]
+              },
+              "authentication": {
+                "type": "ManagedServiceIdentity",
+                "identity": "@parameters('workflowsIdentityResourceId')",
+                "audience": "https://cosmos.azure.com"
+              }
+            },
+            "runAfter": {
+              "Set_work_item_id": [
+                "Succeeded"
+              ]
+            },
+            "runtimeConfiguration": {
+              "secureData": {
+                "properties": [
+                  "inputs",
+                  "outputs"
+                ]
+              }
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT2S",
+              "minimumInterval": "PT2S",
+              "maximumInterval": "PT20S"
+            }
+          },
+          "Require_unique_record": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@length(body('Query_work_item')?['Documents'])",
+                1
+              ]
+            },
+            "actions": {
+              "Check_record_source_contract": {
+                "type": "If",
+                "expression": {
+                  "and": [
+                    {
+                      "equals": [
+                        "@first(body('Query_work_item')?['Documents'])?['id']",
+                        "@variables('workItemId')"
+                      ]
+                    },
+                    {
+                      "equals": [
+                        "@first(body('Query_work_item')?['Documents'])?['source']?['blob_name']",
+                        "@triggerBody()?['path']"
+                      ]
+                    },
+                    {
+                      "equals": [
+                        "@first(body('Query_work_item')?['Documents'])?['source']?['content_type']",
+                        "application/pdf"
+                      ]
+                    },
+                    {
+                      "lessOrEquals": [
+                        "@first(body('Query_work_item')?['Documents'])?['source']?['size_bytes']",
+                        20971520
+                      ]
+                    }
+                  ]
+                },
+                "actions": {
+                  "Wait_for_backend_queue_transition": {
+                    "type": "Until",
+                    "expression": {
+                      "or": [
+                        {
+                          "equals": [
+                            "@variables('currentStatus')",
+                            "queued"
+                          ]
+                        },
+                        {
+                          "not": {
+                            "equals": [
+                              "@variables('currentStatus')",
+                              "submitted"
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "limit": {
+                      "count": 12,
+                      "timeout": "PT2M"
+                    },
+                    "actions": {
+                      "Delay_before_status_refresh": {
+                        "type": "Wait",
+                        "inputs": {
+                          "interval": {
+                            "count": 10,
+                            "unit": "Second"
+                          }
+                        }
+                      },
+                      "Refresh_work_item": {
+                        "type": "Http",
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs/', variables('workItemId'))}",
+                          "headers": {
+                            "x-ms-version": "2018-12-31",
+                            "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                            "x-ms-documentdb-partitionkey": "@{concat('[\"', first(body('Query_work_item')?['Documents'])?['created_at'], '\"]')}"
+                          },
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "identity": "@parameters('workflowsIdentityResourceId')",
+                            "audience": "https://cosmos.azure.com"
+                          }
+                        },
+                        "runAfter": {
+                          "Delay_before_status_refresh": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT20S"
+                        }
+                      },
+                      "Set_current_status": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "currentStatus",
+                          "value": "@body('Refresh_work_item')?['status']"
+                        },
+                        "runAfter": {
+                          "Refresh_work_item": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_current_record": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "currentRecord",
+                          "value": "@body('Refresh_work_item')"
+                        },
+                        "runAfter": {
+                          "Refresh_work_item": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Initialize_current_status": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Initialize_current_record": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "currentRecord",
+                      "value": "@first(body('Query_work_item')?['Documents'])"
+                    },
+                    "runAfter": {
+                      "Check_record_source_contract": [
+                        "Succeeded"
+                      ]
+                    },
+                    "runtimeConfiguration": {
+                      "secureData": {
+                        "properties": [
+                          "inputs",
+                          "outputs"
+                        ]
+                      }
+                    }
+                  },
+                  "Initialize_current_status": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "currentStatus",
+                      "value": "@first(body('Query_work_item')?['Documents'])?['status']"
+                    },
+                    "runAfter": {
+                      "Initialize_current_record": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Fail_if_still_submitted": {
+                    "type": "If",
+                    "expression": {
+                      "equals": [
+                        "@variables('currentStatus')",
+                        "submitted"
+                      ]
+                    },
+                    "actions": {
+                      "Readiness_timeout": {
+                        "type": "Terminate",
+                        "inputs": {
+                          "runStatus": "Failed",
+                          "code": "queue_transition_timeout",
+                          "message": "The work item did not reach queued status within the readiness window."
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Wait_for_backend_queue_transition": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Only_process_queued_records": {
+                    "type": "If",
+                    "expression": {
+                      "equals": [
+                        "@variables('currentStatus')",
+                        "queued"
+                      ]
+                    },
+                    "actions": {
+                      "Claim_processing_with_etag": {
+                        "type": "Http",
+                        "inputs": {
+                          "method": "PUT",
+                          "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs/', variables('workItemId'))}",
+                          "headers": {
+                            "Content-Type": "application/json",
+                            "x-ms-version": "2018-12-31",
+                            "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                            "x-ms-documentdb-partitionkey": "@{concat('[\"', variables('currentRecord')?['created_at'], '\"]')}",
+                            "If-Match": "@variables('currentRecord')?['_etag']"
+                          },
+                          "body": "@removeProperty(setProperty(setProperty(setProperty(setProperty(setProperty(variables('currentRecord'), 'status', 'processing'), 'version', add(variables('currentRecord')?['version'], 1)), 'updated_at', utcNow()), 'result', null), 'error', null), '_etag')",
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "identity": "@parameters('workflowsIdentityResourceId')",
+                            "audience": "https://cosmos.azure.com"
+                          }
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "none"
+                        }
+                      },
+                      "Mark_claimed": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "claimed",
+                          "value": true
+                        },
+                        "runAfter": {
+                          "Claim_processing_with_etag": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Read_source_pdf": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "serviceProviderConfiguration": {
+                            "connectionName": "azureblob",
+                            "operationId": "readBlob",
+                            "serviceProviderId": "/serviceProviders/AzureBlob"
+                          },
+                          "parameters": {
+                            "containerName": "@parameters('inputContainer')",
+                            "blobName": "@variables('currentRecord')?['source']?['blob_name']"
+                          }
+                        },
+                        "runAfter": {
+                          "Mark_claimed": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT20S"
+                        }
+                      },
+                      "Read_system_instructions": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "serviceProviderConfiguration": {
+                            "connectionName": "azureblob",
+                            "operationId": "readBlob",
+                            "serviceProviderId": "/serviceProviders/AzureBlob"
+                          },
+                          "parameters": {
+                            "containerName": "@parameters('instructionsContainer')",
+                            "blobName": "@parameters('systemInstructionsFile')"
+                          }
+                        },
+                        "runAfter": {
+                          "Read_source_pdf": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT20S"
+                        }
+                      },
+                      "Read_processing_instructions": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "serviceProviderConfiguration": {
+                            "connectionName": "azureblob",
+                            "operationId": "readBlob",
+                            "serviceProviderId": "/serviceProviders/AzureBlob"
+                          },
+                          "parameters": {
+                            "containerName": "@parameters('instructionsContainer')",
+                            "blobName": "@parameters('processingInstructionsFile')"
+                          }
+                        },
+                        "runAfter": {
+                          "Read_system_instructions": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT20S"
+                        }
+                      },
+                      "Invoke_foundry_responses": {
+                        "type": "Http",
+                        "inputs": {
+                          "method": "POST",
+                          "uri": "@{concat(parameters('foundryInferenceEndpoint'), 'responses')}",
+                          "headers": {
+                            "Content-Type": "application/json"
+                          },
+                          "body": {
+                            "model": "@parameters('foundryDeploymentName')",
+                            "instructions": "@{concat(base64ToString(body('Read_system_instructions')?['$content']), '\\n', base64ToString(body('Read_processing_instructions')?['$content']))}",
+                            "input": [
+                              {
+                                "role": "user",
+                                "content": [
+                                  {
+                                    "type": "input_text",
+                                    "text": "Summarize, classify, and extract grounded key points from the attached PDF."
+                                  },
+                                  {
+                                    "type": "input_file",
+                                    "filename": "source.pdf",
+                                    "file_data": "@{concat('data:application/pdf;base64,', body('Read_source_pdf')?['$content'])}"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": {
+                              "format": {
+                                "type": "json_schema",
+                                "name": "document_summary",
+                                "strict": true,
+                                "schema": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "summary",
+                                    "category",
+                                    "key_points"
+                                  ],
+                                  "properties": {
+                                    "summary": {
+                                      "type": "string"
+                                    },
+                                    "category": {
+                                      "type": "string",
+                                      "enum": [
+                                        "informational",
+                                        "action_required",
+                                        "reference",
+                                        "other"
+                                      ]
+                                    },
+                                    "key_points": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "runAfter": {
+                                "Initialize_current_status": [
+                                  "Succeeded"
+                                ]
+                              }
+                            },
+                            "max_output_tokens": 1000,
+                            "store": false
+                          },
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "identity": "@parameters('workflowsIdentityResourceId')",
+                            "audience": "https://ai.azure.com"
+                          }
+                        },
+                        "runAfter": {
+                          "Read_processing_instructions": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT30S"
+                        }
+                      },
+                      "Require_complete_foundry_response": {
+                        "type": "If",
+                        "expression": {
+                          "equals": [
+                            "@body('Invoke_foundry_responses')?['status']",
+                            "completed"
+                          ]
+                        },
+                        "actions": {
+                          "Validate_foundry_response": {
+                            "type": "ParseJson",
+                            "inputs": {
+                              "content": "@body('Invoke_foundry_responses')?['output_text']",
+                              "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "summary",
+                                  "category",
+                                  "key_points"
+                                ],
+                                "properties": {
+                                  "summary": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 4000
+                                  },
+                                  "category": {
+                                    "type": "string",
+                                    "enum": [
+                                      "informational",
+                                      "action_required",
+                                      "reference",
+                                      "other"
+                                    ]
+                                  },
+                                  "key_points": {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "maxItems": 5,
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 1000
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "runtimeConfiguration": {
+                              "secureData": {
+                                "properties": [
+                                  "inputs",
+                                  "outputs"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {
+                            "Reject_incomplete_or_refused_response": {
+                              "type": "Terminate",
+                              "inputs": {
+                                "runStatus": "Failed",
+                                "code": "ai_response_incomplete",
+                                "message": "The model did not return a complete structured response."
+                              }
+                            }
+                          }
+                        },
+                        "runAfter": {
+                          "Invoke_foundry_responses": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Persist_completed_with_etag": {
+                        "type": "Http",
+                        "inputs": {
+                          "method": "PUT",
+                          "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs/', variables('workItemId'))}",
+                          "headers": {
+                            "Content-Type": "application/json",
+                            "x-ms-version": "2018-12-31",
+                            "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                            "x-ms-documentdb-partitionkey": "@{concat('[\"', body('Claim_processing_with_etag')?['created_at'], '\"]')}",
+                            "If-Match": "@body('Claim_processing_with_etag')?['_etag']"
+                          },
+                          "body": "@removeProperty(setProperty(setProperty(setProperty(setProperty(setProperty(body('Claim_processing_with_etag'), 'status', 'completed'), 'version', add(body('Claim_processing_with_etag')?['version'], 1)), 'updated_at', utcNow()), 'result', body('Validate_foundry_response')), 'error', null), '_etag')",
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "identity": "@parameters('workflowsIdentityResourceId')",
+                            "audience": "https://cosmos.azure.com"
+                          }
+                        },
+                        "runAfter": {
+                          "Require_complete_foundry_response": [
+                            "Succeeded"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT20S"
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Recognize_duplicate_or_invalid_status": {
+                          "type": "If",
+                          "expression": {
+                            "or": [
+                              {
+                                "equals": [
+                                  "@variables('currentStatus')",
+                                  "processing"
+                                ]
+                              },
+                              {
+                                "equals": [
+                                  "@variables('currentStatus')",
+                                  "completed"
+                                ]
+                              },
+                              {
+                                "equals": [
+                                  "@variables('currentStatus')",
+                                  "failed"
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Duplicate_delivery_noop": {
+                              "type": "Terminate",
+                              "inputs": {
+                                "runStatus": "Succeeded"
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {
+                              "Unknown_work_item_status": {
+                                "type": "Terminate",
+                                "inputs": {
+                                  "runStatus": "Failed",
+                                  "code": "work_item_status_invalid",
+                                  "message": "The work item is in an unsupported state."
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Fail_if_still_submitted": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Handle_claimed_failure": {
+                    "type": "If",
+                    "expression": {
+                      "equals": [
+                        "@variables('claimed')",
+                        true
+                      ]
+                    },
+                    "actions": {
+                      "Read_current_record_after_failure": {
+                        "type": "Http",
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs/', variables('workItemId'))}",
+                          "headers": {
+                            "x-ms-version": "2018-12-31",
+                            "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                            "x-ms-documentdb-partitionkey": "@{concat('[\"', body('Claim_processing_with_etag')?['created_at'], '\"]')}"
+                          },
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "identity": "@parameters('workflowsIdentityResourceId')",
+                            "audience": "https://cosmos.azure.com"
+                          }
+                        },
+                        "runtimeConfiguration": {
+                          "secureData": {
+                            "properties": [
+                              "inputs",
+                              "outputs"
+                            ]
+                          }
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT2S",
+                          "minimumInterval": "PT2S",
+                          "maximumInterval": "PT20S"
+                        }
+                      },
+                      "Persist_safe_failed_state": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "equals": [
+                                "@body('Read_current_record_after_failure')?['status']",
+                                "processing"
+                              ]
+                            },
+                            {
+                              "equals": [
+                                "@body('Read_current_record_after_failure')?['version']",
+                                "@body('Claim_processing_with_etag')?['version']"
+                              ]
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "Replace_processing_with_safe_failure": {
+                            "type": "Http",
+                            "inputs": {
+                              "method": "PUT",
+                              "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs/', variables('workItemId'))}",
+                              "headers": {
+                                "Content-Type": "application/json",
+                                "x-ms-version": "2018-12-31",
+                                "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                                "x-ms-documentdb-partitionkey": "@{concat('[\"', body('Read_current_record_after_failure')?['created_at'], '\"]')}",
+                                "If-Match": "@body('Read_current_record_after_failure')?['_etag']"
+                              },
+                              "body": "@removeProperty(setProperty(setProperty(setProperty(setProperty(setProperty(body('Read_current_record_after_failure'), 'status', 'failed'), 'version', add(body('Read_current_record_after_failure')?['version'], 1)), 'updated_at', utcNow()), 'result', null), 'error', json(concat('{\"code\":\"ai_processing_failed\",\"message\":\"Document processing failed.\",\"retryable\":true,\"occurred_at\":\"', utcNow(), '\"}')), '_etag')",
+                              "authentication": {
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@parameters('workflowsIdentityResourceId')",
+                                "audience": "https://cosmos.azure.com"
+                              }
+                            },
+                            "runtimeConfiguration": {
+                              "secureData": {
+                                "properties": [
+                                  "inputs",
+                                  "outputs"
+                                ]
+                              }
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 4,
+                              "interval": "PT2S",
+                              "minimumInterval": "PT2S",
+                              "maximumInterval": "PT20S"
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {
+                            "Do_not_overwrite_changed_or_terminal_record": {
+                              "type": "Terminate",
+                              "inputs": {
+                                "runStatus": "Failed",
+                                "code": "terminal_write_conflict",
+                                "message": "The work item changed before the failure state could be persisted."
+                              }
+                            }
+                          }
+                        },
+                        "runAfter": {
+                          "Read_current_record_after_failure": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Read_unclaimed_record": {
+                          "type": "Http",
+                          "inputs": {
+                            "method": "GET",
+                            "uri": "@{concat(parameters('cosmosAccountUri'), 'dbs/', parameters('cosmosDatabase'), '/colls/', parameters('cosmosContainer'), '/docs/', variables('workItemId'))}",
+                            "headers": {
+                              "x-ms-version": "2018-12-31",
+                              "x-ms-date": "@{formatDateTime(utcNow(), 'R')}",
+                              "x-ms-documentdb-partitionkey": "@{concat('[\"', variables('currentRecord')?['created_at'], '\"]')}"
+                            },
+                            "authentication": {
+                              "type": "ManagedServiceIdentity",
+                              "identity": "@parameters('workflowsIdentityResourceId')",
+                              "audience": "https://cosmos.azure.com"
+                            }
+                          },
+                          "runtimeConfiguration": {
+                            "secureData": {
+                              "properties": [
+                                "inputs",
+                                "outputs"
+                              ]
+                            }
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT2S",
+                            "minimumInterval": "PT2S",
+                            "maximumInterval": "PT20S"
+                          }
+                        },
+                        "Decide_from_unclaimed_status": {
+                          "type": "If",
+                          "expression": {
+                            "or": [
+                              {
+                                "equals": [
+                                  "@body('Read_unclaimed_record')?['status']",
+                                  "processing"
+                                ]
+                              },
+                              {
+                                "equals": [
+                                  "@body('Read_unclaimed_record')?['status']",
+                                  "completed"
+                                ]
+                              },
+                              {
+                                "equals": [
+                                  "@body('Read_unclaimed_record')?['status']",
+                                  "failed"
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Lost_claim_noop": {
+                              "type": "Terminate",
+                              "inputs": {
+                                "runStatus": "Succeeded"
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {
+                              "Unclaimed_record_conflict": {
+                                "type": "Terminate",
+                                "inputs": {
+                                  "runStatus": "Failed",
+                                  "code": "processing_claim_conflict",
+                                  "message": "The work item could not be claimed for processing."
+                                }
+                              }
+                            }
+                          },
+                          "runAfter": {
+                            "Read_unclaimed_record": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Only_process_queued_records": [
+                        "Failed",
+                        "TimedOut"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "actions": {
+                    "Invalid_source_contract": {
+                      "type": "Terminate",
+                      "inputs": {
+                        "runStatus": "Failed",
+                        "code": "source_contract_invalid",
+                        "message": "The triggered blob does not match the stored PDF contract."
+                      }
+                    }
+                  }
+                },
+                "runAfter": {
+                  "Query_work_item": [
+                    "Succeeded"
+                  ]
+                }
+              }
+            },
+            "else": {
+              "actions": {
+                "Missing_or_ambiguous_record": {
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Failed",
+                    "code": "work_item_lookup_failed",
+                    "message": "The triggered blob did not resolve to exactly one work item."
+                  }
+                }
+              }
+            },
+            "runAfter": {
+              "Query_work_item": [
+                "Succeeded"
+              ]
+            }
+          }
+        },
+        "else": {
+          "actions": {
+            "Ignore_unrelated_blob": {
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Succeeded"
+              }
+            }
+          }
+        }
+      }
+    },
+    "outputs": {}
+  }
+}
