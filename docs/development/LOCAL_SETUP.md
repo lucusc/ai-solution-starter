@@ -53,20 +53,20 @@ test-only request fixtures and does not call Azure.
 ## Backend development
 
 The real backend persistence adapters require Azure Storage and Cosmos DB.
-Export values from an explicitly selected development environment before
-starting the server. Never use a production environment for local experiments.
+Copy the backend template, set values from an explicitly selected development
+environment, and then start the server. Never use a production environment for
+local experiments.
 
 ```bash
-export LOCAL_AUTH_SUBJECT=local-developer
-export AZURE_STORAGE_ACCOUNT=<storage-account>
-export AZURE_STORAGE_CONTAINER=inputs
-export AZURE_COSMOSDB_ACCOUNT=<cosmos-account>
-export AZURE_COSMOSDB_DATABASE=starter
-export AZURE_COSMOSDB_CONTAINER=inputs
+cp app/backend/.env.example app/backend/.env
 
 PYTHONPATH=app/backend .venv/bin/hypercorn \
   --config app/backend/hypercorn.toml backend.main:app
 ```
+
+The backend loads `app/backend/.env` (or a repository-root `.env`) only when
+`RUNNING_IN_PRODUCTION` is not true. Exported environment variables override
+`.env` values.
 
 `LOCAL_AUTH_SUBJECT` is for local development only and is rejected when
 `RUNNING_IN_PRODUCTION=true`.

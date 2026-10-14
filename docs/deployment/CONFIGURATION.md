@@ -8,7 +8,8 @@ Use the [parameter catalog](../infrastructure/PARAMETER_CATALOG.md) as the
 authoritative inventory.
 
 Application secrets must be stored as azd secrets or GitHub environment
-secrets. Do not commit local environment files.
+secrets. For local backend development, `app/backend/.env` is allowed, but it
+must never be committed or used as a deployment source.
 
 ## Minimum environment choices
 

@@ -95,6 +95,9 @@ Generate the synthetic hello-world PDF:
 ```
 
 Generated PDFs and frontend assets are ignored and must not be committed.
+For local backend development, copy
+`app/backend/.env.example` to `app/backend/.env` and set Azure values from an
+approved development environment.
 
 ## Validate
 

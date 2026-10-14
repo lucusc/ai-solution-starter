@@ -13,20 +13,23 @@ python3 -m venv .venv
 
 ## Development
 
-Provide the Azure settings from an azd environment and a synthetic local
-identity:
+Copy the local backend environment template and fill in values from the
+approved azd development environment:
 
 ```bash
-export LOCAL_AUTH_SUBJECT=local-developer
-export AZURE_STORAGE_ACCOUNT=<storage-account>
-export AZURE_STORAGE_CONTAINER=inputs
-export AZURE_COSMOSDB_ACCOUNT=<cosmos-account>
-export AZURE_COSMOSDB_DATABASE=starter
-export AZURE_COSMOSDB_CONTAINER=inputs
+cp app/backend/.env.example app/backend/.env
+```
 
+Then run the backend:
+
+```bash
 PYTHONPATH=app/backend .venv/bin/hypercorn \
   --config app/backend/hypercorn.toml backend.main:app
 ```
+
+The backend loads `app/backend/.env` (or a repository-root `.env`) only when
+`RUNNING_IN_PRODUCTION` is not true. Exported environment variables always
+take precedence over values in `.env`.
 
 `LOCAL_AUTH_SUBJECT` is rejected when `RUNNING_IN_PRODUCTION=true`.
 
