@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_INPROC_NET8_ENABLED": "1",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "APP_KIND": "workflowapp",
+    "ProjectDirectoryPath": "/home/lucrawford/src/work/goa/ai-solution-starter/app/agent/workflows",
+    "AZURE_STORAGE_ACCOUNT": "",
+    "AZURE_STORAGE_ENDPOINT": "",
+    "WORKFLOWS_AUTHENTICATION_METHOD": "managedServiceIdentity"
+  }
+}

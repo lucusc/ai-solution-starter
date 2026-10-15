@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "name": "workflows",
+      "path": "./workflows"
+    }
+  ],
+  "settings": {
+    "azurite.location": "/home/vscode/.azurelogicapps/.azurite"
+  }
+}
