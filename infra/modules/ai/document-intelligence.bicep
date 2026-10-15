@@ -17,9 +17,8 @@ param publicNetworkAccess string = 'Disabled'
 
 @allowed([
   'None'
-  'AzureServices'
 ])
-param networkBypass string = 'AzureServices'
+param networkBypass string = 'None'
 
 param ipRules array = []
 param disableLocalAuth bool = true
