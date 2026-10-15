@@ -905,7 +905,6 @@ module documentIntelligence 'modules/ai/document-intelligence.bicep' = if (docum
     skuName: documentIntelligenceSkuName
     tags: tags
     publicNetworkAccess: !empty(ipRules) ? 'Enabled' : publicNetworkAccess
-    networkBypass: 'None'
     ipRules: ipRules
     disableLocalAuth: true
     configureExistingResource: configureExistingAiServices

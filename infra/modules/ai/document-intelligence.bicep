@@ -15,11 +15,6 @@ param tags object = {}
 ])
 param publicNetworkAccess string = 'Disabled'
 
-@allowed([
-  'None'
-])
-param networkBypass string = 'None'
-
 param ipRules array = []
 param disableLocalAuth bool = true
 param configureExistingResource bool = false
@@ -59,7 +54,6 @@ resource newAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = if (mode
     publicNetworkAccess: publicNetworkAccess
     networkAcls: {
       defaultAction: 'Deny'
-      bypass: networkBypass
       ipRules: ipRules
       virtualNetworkRules: []
     }
