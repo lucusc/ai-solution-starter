@@ -1,4 +1,5 @@
 -r requirements.txt
+-r ../../scripts/requirements.txt
 
 mypy>=1.14,<2
 pytest>=8.3,<9

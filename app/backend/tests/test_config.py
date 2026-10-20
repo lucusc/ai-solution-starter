@@ -1,7 +1,37 @@
 from pathlib import Path
 
 import pytest
+from backend import config
 from backend.config import ConfigurationError, Settings
+
+
+@pytest.mark.parametrize(
+    ("module_path", "working_directory", "expected"),
+    [
+        (
+            "/repo/app/backend/backend/config.py",
+            "/work",
+            ("/work/.env", "/repo/app/backend/.env", "/repo/.env"),
+        ),
+        (
+            "/repo/app/backend/backend/config.py",
+            "/repo/app/backend",
+            ("/repo/app/backend/.env", "/repo/.env"),
+        ),
+        ("/app/backend/config.py", "/work", ("/work/.env", "/app/.env")),
+        ("/app/backend/config.py", "/app", ("/app/.env",)),
+    ],
+)
+def test_dotenv_candidates_support_repository_and_container_layouts(
+    monkeypatch: pytest.MonkeyPatch,
+    module_path: str,
+    working_directory: str,
+    expected: tuple[str, ...],
+) -> None:
+    monkeypatch.setattr(config, "__file__", module_path)
+    monkeypatch.setattr(Path, "cwd", classmethod(lambda cls: Path(working_directory)))
+
+    assert config._dotenv_candidates() == tuple(Path(candidate) for candidate in expected)
 
 
 def test_production_rejects_local_identity() -> None:
@@ -22,10 +52,14 @@ def test_resolved_endpoints_use_account_names(settings: Settings) -> None:
     assert settings.resolved_cosmos_endpoint == ("https://startercosmos.documents.azure.com:443/")
 
 
+@pytest.mark.parametrize("container_layout", [False, True])
 def test_from_environment_loads_local_dotenv_for_development(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    container_layout: bool,
 ) -> None:
+    if container_layout:
+        monkeypatch.setattr(config, "__file__", "/app/backend/config.py")
     names = (
         "RUNNING_IN_PRODUCTION",
         "LOCAL_AUTH_SUBJECT",

@@ -26,6 +26,7 @@ jobs:
           cache-dependency-path: |
             app/backend/requirements.txt
             app/backend/requirements-dev.txt
+            scripts/requirements.txt
 
       - name: Install dependencies
         run: python -m pip install -r app/backend/requirements-dev.txt

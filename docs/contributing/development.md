@@ -33,6 +33,9 @@ npm ci
 cd ../..
 ```
 
+The backend development requirements also install the authentication-hook
+dependencies from `scripts/requirements.txt`, including the Microsoft Graph SDK.
+
 None of the tests need Azure, an azd environment or real documents. To run
 the app locally against a deployed environment, see
 [develop against Azure](../quickstarts/develop-against-azure.md).

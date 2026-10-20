@@ -46,12 +46,12 @@ def _required(name: str) -> str:
 
 def _dotenv_candidates() -> tuple[Path, ...]:
     backend_root = Path(__file__).resolve().parents[1]
-    repository_root = backend_root.parents[1]
-    candidates = (
+    candidates = [
         Path.cwd() / ".env",
         backend_root / ".env",
-        repository_root / ".env",
-    )
+    ]
+    if len(backend_root.parents) > 1:
+        candidates.append(backend_root.parents[1] / ".env")
     deduplicated: list[Path] = []
     seen_paths: set[Path] = set()
     for candidate in candidates:
