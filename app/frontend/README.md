@@ -5,32 +5,16 @@ work-item flow.
 
 ## Development
 
-Install dependencies from the repository root:
-
-```bash
-cd app/frontend
-npm ci
-```
-
-Start the Quart backend on port 8000 with `LOCAL_AUTH_SUBJECT` configured, then
-start Vite:
-
-```bash
-cp .env.example .env.local
-npm run dev
-```
+Follow [develop against Azure](../../docs/quickstarts/develop-against-azure.md)
+for installation, backend startup and Vite. Tests use request fixtures;
+the development server does not enable these fixtures as an offline demo.
 
 Vite proxies `/api` to `VITE_PROXY_TARGET`. The local account label is
 display-only; backend ownership always comes from Quart authentication.
 
 ## Validation
 
-```bash
-npm run lint
-npm run typecheck
-npm test -- --run
-npm run build
-```
+See [development](../../docs/contributing/development.md#individual-commands) for the frontend checks.
 
 The production build is written to `app/backend/static/`. That directory is
 generated, Git-ignored, and served by Quart in the production container.
@@ -62,6 +46,9 @@ When adapting the starter:
 4. Keep identity and authorization on the backend.
 5. Keep generated assets out of Git.
 6. Update tests before changing deployment integration.
+
+Use [customize the app](../../docs/how-to/customize-the-app.md)
+for coordinated backend/workflow/frontend changes and verification.
 
 ## Authentication
 

@@ -5,6 +5,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 mode="${1:-all}"
 python_bin="$repo_root/.venv/bin/python"
+cd "$repo_root"
 
 usage() {
   echo "Usage: $0 [application|infrastructure|repository|all]" >&2
@@ -12,7 +13,7 @@ usage() {
 
 validate_application() {
   if [ ! -x "$python_bin" ]; then
-    echo "Missing .venv. Follow docs/development/LOCAL_SETUP.md first." >&2
+    echo "Missing .venv. Follow docs/contributing/development.md first." >&2
     exit 1
   fi
 
@@ -24,19 +25,22 @@ validate_application() {
   npm run build
   popd >/dev/null
 
-  "$python_bin" -m pytest
+  "$python_bin" -m pytest app/backend/tests app/agent/tests scripts/tests
+  "$python_bin" "$repo_root/scripts/verify_logic_app_package.py"
   "$python_bin" -m ruff check \
     app/backend \
     scripts/generate_sample_pdf.py \
     scripts/smoke_backend_azure.py \
     scripts/validate_ai_service_config.py \
-    scripts/validate_repository.py
+    scripts/validate_repository.py \
+    scripts/tests
   "$python_bin" -m ruff format --check \
     app/backend \
     scripts/generate_sample_pdf.py \
     scripts/smoke_backend_azure.py \
     scripts/validate_ai_service_config.py \
-    scripts/validate_repository.py
+    scripts/validate_repository.py \
+    scripts/tests
   "$python_bin" -m mypy app/backend/backend
   docker build \
     -f "$repo_root/app/backend/Dockerfile" \
@@ -56,7 +60,7 @@ validate_infrastructure() {
 
 validate_repository() {
   if [ ! -x "$python_bin" ]; then
-    echo "Missing .venv. Follow docs/development/LOCAL_SETUP.md first." >&2
+    echo "Missing .venv. Follow docs/contributing/development.md first." >&2
     exit 1
   fi
   "$python_bin" "$repo_root/scripts/validate_repository.py"

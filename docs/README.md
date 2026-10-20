@@ -1,29 +1,60 @@
 # Documentation
 
-## Start here
+Pick the section that matches what you need.
 
-- [Architecture overview](architecture/OVERVIEW.md)
-- [Application flow](architecture/APPLICATION_FLOW.md)
-- [Prerequisites](development/PREREQUISITES.md)
-- [Local setup](development/LOCAL_SETUP.md)
-- [Validation](development/VALIDATION.md)
-- [Deployment sequence](deployment/DEPLOYMENT_SEQUENCE.md)
-- [Deployment configuration](deployment/CONFIGURATION.md)
-- [Troubleshooting](deployment/TROUBLESHOOTING.md)
-- [Cost drivers](operations/COST_DRIVERS.md)
-- [Optional AI services](infrastructure/AI_SERVICES.md)
-- [Replacement guide](replacement/REPLACEMENT_GUIDE.md)
+| Section | For | Start with |
+| --- | --- | --- |
+| [Quick starts](quickstarts/README.md) | Getting a scenario running, with no Azure or IaC experience needed | [Before you start](quickstarts/before-you-start.md) |
+| [How-to guides](how-to/README.md) | Doing one specific task on a deployment | [Troubleshoot](how-to/troubleshoot.md) |
+| [Concepts](concepts/README.md) | Understanding how it works and why | [Architecture](concepts/architecture.md) |
+| [Reference](reference/README.md) | Looking up settings, resources, the API and scripts | [Configuration](reference/configuration.md) |
+| [Contributing](contributing/README.md) | Changing the code, infrastructure or docs | [Development](contributing/development.md) |
+| [Planning](planning/README.md) | Proposed features and bug fixes | |
 
-## Project governance and history
+## Quick starts
 
-- [Implementation plan](PLAN.md)
-- [Phase task backlog](PHASE_TASKS.md)
-- [Source sanitization policy](SOURCE_SANITIZATION.md)
-- [Phase plans](phases/)
-- [Phase 6 optional AI services plan](phases/PHASE_6_IMPLEMENTATION_PLAN.md)
-- [Phase 7 Foundry-first and optional OpenAI plan](phases/PHASE_7_IMPLEMENTATION_PLAN.md)
-- [Implementation reports](reviews/)
+- [Before you start](quickstarts/before-you-start.md): tools, Azure access, sign-in
+- [Deploy the demo](quickstarts/deploy-demo.md)
+- [Private Foundry + Document Intelligence](quickstarts/deploy-private-foundry-docintel.md)
+- [Deploy with GitHub Actions](quickstarts/deploy-github-actions.md)
+- [Deploy into an existing VNet](quickstarts/deploy-existing-vnet.md)
+- [Bring your own AI resources](quickstarts/bring-your-own-ai.md)
+- [Infrastructure only](quickstarts/infrastructure-only.md)
+- [Develop against Azure](quickstarts/develop-against-azure.md)
+- [Run tests without Azure](quickstarts/run-tests-without-azure.md)
 
-Infrastructure-specific contracts are under [infrastructure](infrastructure/).
-Historical phase plans and reports describe decisions at the time they were
-written; use the root README for current component status.
+## How-to guides
+
+- [Configure authentication](how-to/configure-authentication.md)
+- [Choose AI services and models](how-to/choose-ai-services-and-models.md)
+- [Access a private deployment](how-to/access-a-private-deployment.md)
+- [Manage multiple environments](how-to/manage-multiple-environments.md)
+- [Customize the app](how-to/customize-the-app.md)
+- [Troubleshoot](how-to/troubleshoot.md)
+- [Clean up](how-to/clean-up.md)
+
+## Concepts
+
+- [Architecture](concepts/architecture.md)
+- [How deployment works](concepts/how-deployment-works.md)
+- [Networking](concepts/networking.md)
+- [Identity and access](concepts/identity-and-access.md)
+- [Cost](concepts/cost.md)
+- [Known limitations](concepts/known-limitations.md)
+
+## Reference
+
+- [Configuration](reference/configuration.md)
+- [App settings](reference/app-settings.md)
+- [Azure resources](reference/resources.md)
+- [API](reference/api.md)
+- [Scripts](reference/scripts.md)
+- [GitHub workflows](reference/github-workflows.md)
+
+## Component READMEs
+
+Short notes that live next to the code:
+[backend](../app/backend/README.md), [frontend](../app/frontend/README.md),
+[workflow](../app/agent/README.md), [infrastructure](../infra/README.md),
+[scripts](../scripts/README.md), [GitHub workflows](../.github/workflows/README.md)
+and [test data](../tests/README.md).

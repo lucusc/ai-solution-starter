@@ -1,164 +1,80 @@
 # AI Solution Starter
 
-AI Solution Starter is a reusable Azure application baseline with a React web
-frontend, Quart API, Blob Storage, Cosmos DB, Logic Apps Standard, Azure
-OpenAI, managed identity, monitoring, private networking, and automated
-deployment. The included PDF work-item experience is intentionally small and
-replaceable.
+A ready-made Azure baseline for AI document apps. It deploys a web app
+where users upload PDFs, an AI workflow that processes them, and everything
+around it: private networking, managed identity, sign-in and monitoring.
 
-## Component status
-
-| Component | Status |
-| --- | --- |
-| Azure infrastructure and deployment baseline | Implemented and checksum protected |
-| Quart backend and persistence contracts | Implemented locally; pending review/push |
-| React frontend and static hosting | Implemented locally; pending review/push |
-| Logic App and Foundry processing workflow | Implemented locally in Phase 7; Azure validation remains gated |
-| Starter-readiness documentation and validation | Implemented locally; pending review |
-| Optional Foundry and Document Intelligence infrastructure | Implemented locally; defaults to `none`; pending review |
-
-The repository does not yet claim a completed deployed AI vertical slice. See
-the [phased plan](docs/PLAN.md) and
-[Phase 4 plan](docs/phases/PHASE_4_IMPLEMENTATION_PLAN.md).
-
-## Architecture
+The PDF demo is small on purpose. Keep the infrastructure and replace the
+demo with your own app.
 
 ```mermaid
 flowchart LR
-    User[Authenticated user] --> Web[React frontend]
-    Web --> API[Quart API on App Service]
-    API --> Blob[Azure Blob Storage]
-    API --> Cosmos[Azure Cosmos DB]
-    Blob -. planned trigger .-> Logic[Logic Apps Standard]
-    Logic -. planned managed identity call .-> OpenAI[Azure OpenAI]
-    Logic -. optional future use .-> Foundry[Microsoft Foundry project]
-    Logic -. optional future use .-> DocIntel[Document Intelligence]
-    Logic -. planned status and result .-> Cosmos
-    Cosmos --> API
-    API --> Web
-    Monitor[Application Insights and Log Analytics] --- API
-    Monitor --- Logic
+    User[Signed-in user] --> Web[Web app<br/>React + Quart API]
+    Web --> Blob[Blob Storage]
+    Web --> Cosmos[Cosmos DB]
+    Blob --> Logic[Logic App workflow]
+    Logic --> AI[Microsoft Foundry model]
+    Logic --> Cosmos
 ```
 
-The application currently accepts authenticated PDF uploads up to 20 MB,
-stores them under a server-generated Blob path, persists owner-scoped work-item
-records, and displays every lifecycle state. Phase 4 will supply the real
-`queued -> processing -> completed/failed` AI workflow.
+## Choose your path
+
+| I want to... | Start here |
+| --- | --- |
+| Deploy the demo to Azure, step by step | [Deploy the demo](docs/quickstarts/deploy-demo.md) |
+| Deploy with private endpoints, Foundry and Document Intelligence | [Private Foundry + Document Intelligence](docs/quickstarts/deploy-private-foundry-docintel.md) |
+| Deploy from GitHub Actions | [Deploy with GitHub Actions](docs/quickstarts/deploy-github-actions.md) |
+| See all deployment scenarios | [Quick starts](docs/quickstarts/README.md) |
+| Try the code without an Azure subscription | [Run tests without Azure](docs/quickstarts/run-tests-without-azure.md) |
+| Understand how it fits together | [Architecture](docs/concepts/architecture.md) |
+| Look up a setting | [Configuration reference](docs/reference/configuration.md) |
+| Replace the demo with my own app | [Customize the app](docs/how-to/customize-the-app.md) |
+| Contribute | [Development](docs/contributing/development.md) |
+
+New to Azure or infrastructure as code? Start with
+[before you start](docs/quickstarts/before-you-start.md), then
+[deploy the demo](docs/quickstarts/deploy-demo.md). All the documentation is
+listed in the [documentation hub](docs/README.md).
+
+## What you get
+
+- **Web app:** React frontend and Quart API in one container on App Service,
+  with Microsoft Entra sign-in.
+- **Processing:** a Logic Apps Standard workflow that sends each PDF to a
+  Microsoft Foundry model and saves a structured result.
+- **Data:** Blob Storage for files and Cosmos DB for work items.
+- **Security:** private endpoints and a VNet by default, managed identity
+  instead of keys, and least-privilege role assignments.
+- **Monitoring:** Application Insights and Log Analytics.
+- **Optional:** standalone Azure OpenAI and Document Intelligence, new or
+  existing.
+- **Deployment:** Bicep with the Azure Developer CLI (azd), plus a GitHub
+  Actions workflow.
+
+The app and infrastructure are tested locally and in CI without Azure. A
+full deployment hasn't been validated end to end; see
+[known limitations](docs/concepts/known-limitations.md) before you rely on
+it.
 
 ## Repository layout
 
 ```text
-app/frontend/       React 19, TypeScript, Vite, and Material UI
-app/backend/        Quart API and production container
-app/agent/          Logic App package boundary
-infra/              Immutable Azure Bicep baseline
-scripts/            Setup, deployment, validation, and sample helpers
-docs/               Architecture, development, deployment, and replacement docs
-tests/              Cross-component fixtures and generated sample boundary
-.github/            CI, deployment workflows, and composite actions
+app/frontend/   React, TypeScript and Vite
+app/backend/    Quart API and the production container
+app/agent/      Logic App workflow and prompts
+infra/          Bicep templates (protected baseline)
+scripts/        Deployment hooks, deploy and access scripts, checks
+docs/           Documentation
+tests/          Shared fixtures and synthetic sample data
+.github/        CI and deployment workflows
 ```
 
-## Prerequisites
+## Contributing
 
-Local validation uses:
-
-- Git
-- Python 3.12
-- Node.js 20.19 or later in the Node 20 line
-- npm
-- Docker
-- Azure CLI with Bicep support
-
-Azure deployment additionally requires Azure Developer CLI, an Azure
-subscription, and the permissions described in
-[Prerequisites](docs/development/PREREQUISITES.md).
-
-## Clone and set up
-
-```bash
-git clone https://github.com/lucusc/ai-solution-starter.git
-cd ai-solution-starter
-
-python3 -m venv .venv
-.venv/bin/python -m pip install -r app/backend/requirements-dev.txt
-
-cd app/frontend
-npm ci
-cd ../..
-```
-
-Generate the synthetic hello-world PDF:
-
-```bash
-.venv/bin/python scripts/generate_sample_pdf.py \
-  tests/sample-data/generated/hello-world.pdf
-```
-
-Generated PDFs and frontend assets are ignored and must not be committed.
-For local backend development, copy
-`app/backend/.env.example` to `app/backend/.env` and set Azure values from an
-approved development environment.
-
-## Validate
-
-Run one validation area:
-
-```bash
-./scripts/validate.sh application
-./scripts/validate.sh infrastructure
-./scripts/validate.sh repository
-```
-
-Run every implemented-component check:
-
-```bash
-./scripts/validate.sh all
-```
-
-Local validation does not provision or modify Azure resources. See the
-[validation reference](docs/development/VALIDATION.md) for individual
-commands and expected prerequisites.
-
-## Develop and deploy
-
-- [Local setup and development](docs/development/LOCAL_SETUP.md)
-- [Architecture overview](docs/architecture/OVERVIEW.md)
-- [Application flow](docs/architecture/APPLICATION_FLOW.md)
-- [Deployment sequence](docs/deployment/DEPLOYMENT_SEQUENCE.md)
-- [Deployment configuration](docs/deployment/CONFIGURATION.md)
-- [Troubleshooting](docs/deployment/TROUBLESHOOTING.md)
-- [Azure cost drivers](docs/operations/COST_DRIVERS.md)
-- [Optional AI services](docs/infrastructure/AI_SERVICES.md)
-
-Azure-mutating commands require a separately approved environment and are
-clearly marked in the deployment documentation.
-
-## Replace the hello-world application
-
-Start with the [replacement guide](docs/replacement/REPLACEMENT_GUIDE.md).
-The normal direction is:
-
-- preserve infrastructure, identity, networking, telemetry, and deployment
-  mechanisms;
-- replace work-item domain models, prompts, result schema, pages, and fixtures;
-- update backend, workflow, and frontend contracts together; and
-- add optional Azure services through reviewed conditional modules under
-  `infra/modules/ai/`.
-
-## Repository policy
-
-Never commit real documents, credentials, tenant or subscription values,
-customer identifiers, private repository references, generated PDFs, or
-copied proprietary material. Follow the
-[source sanitization policy](docs/SOURCE_SANITIZATION.md).
-
-Contributions are governed by:
-
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-- [Support](SUPPORT.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md). Never commit real documents,
+credentials, tenant or subscription IDs, or copied proprietary material;
+see [source sanitization](docs/contributing/sanitization.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT](LICENSE)

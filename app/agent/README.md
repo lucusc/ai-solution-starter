@@ -16,6 +16,11 @@ must have the corresponding data-plane permissions in the deployed environment.
 
 ## Instructions and deployment
 
+Use [scripts](../../docs/reference/scripts.md) for packaging tools and
+[access a private deployment](../../docs/how-to/access-a-private-deployment.md)
+for identity and network access. The command below changes Azure
+Blob content and the deployed workflow; it is not a local validation command.
+
 Replace `instructions/system.md` and `instructions/processing.md` with
 application-specific, reviewed prompt assets. Do not place customer documents,
 credentials, or environment-specific data in these files. Deployment uploads
